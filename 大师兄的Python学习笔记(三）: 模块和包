@@ -1,0 +1,375 @@
+## 一、模块(Module)
+##### 1. 关于模块
+> **1）什么是模块**
+> - 模块就是以.py结尾的Python文件。
+> - 一个模块就是一个.py文件。
+>
+> **2）为什么需要模块**
+> - 从文件级别来组织程序，方便管理。
+> - 可以将相关的代码放在一起，代码逻辑感更强。
+> - 方便别人和自己重复利用代码。
+> - 当做命名空间使用，避免命名冲突。
+>```
+><模块名>.<成员名>
+>例1：module.var
+>例2：module.function()
+>```
+> **3）如何定义模块**
+> - 模块就是一个普通文件，所以任何代码可以直接书写，
+> - 模块能定义函数，类和变量，模块里也能包含可执行的代码。
+##### 2. 使用模块
+> - 使用模块就是在模块外调用模块的内容。
+> - 使用模块需要使用```import指令```。
+>
+> **1）import <模块名>**
+> - 导入一个模块。
+> - 用<模块名>.<成员名>调用模块内容。
+>```
+># moduleA.py - 模块1
+>>>>name = 'moduleA'
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>
+># moduleB.py - 模块2
+>>>>import moduleA # 导入moduleA
+>>>>print(moduleA.name) # 调用了moduleA中的变量
+>'moduleA'
+>>>>moduleA.funcA()  # 调用了moduleA中的函数
+>'Here in funcA.'
+>```
+> **2）import <模块名1>, <模块名2>**
+> - 导入多个模块。
+> - 用<模块名>.<成员名>调用模块内容。
+>```
+># moduleA.py - 模块1
+>>>>name = 'moduleA'
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>
+># moduleB.py - 模块2
+>>>>name = 'moduleB'
+>>>>def funcB():
+>>>>    print('Here in funcB.')
+>
+># moduleC.py - 模块3
+>>>>import moduleA, moduleB # 导入moduleA和moduleB
+>>>>print(moduleA.name) # 调用了moduleA中的变量
+>'moduleA'
+>>>>moduleA.funcA()  # 调用了moduleA中的函数
+>'Here in funcA.'
+>>>>print(moduleB.name) # 调用了moduleB中的变量
+>'moduleB'
+>>>>moduleB.funcB()  # 调用了moduleB中的函数
+>'Here in funcB.'
+>```
+> **3）import <模块名> as <自定义名称>**
+> - 导入模块并自己给它起个名字。
+> - 用<自定义名称>.<成员名>调用模块内容。
+>```
+># moduleA.py - 模块1
+>>>>name = 'moduleA'
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>
+># moduleB.py - 模块2
+>>>>import moduleA as AAA # 导入moduleA并改名叫AAA
+>>>>print(AAA.name) # 调用了moduleA中的变量
+>'moduleA'
+>>>>AAA.funcA()  # 调用了moduleA中的函数
+>'Here in funcA.'
+>```
+> **4）from <模块名> import <成员名>**
+> - 导入模块中某个成员。
+> - 可以直接用成员名访问，也可以使用<模块名>.<成员名>访问。
+> - 如果成员名和本地变量名冲突，则使用最后一个定义的。
+>```
+># moduleA.py - 模块1
+>>>>name = 'moduleA'
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>
+># moduleB.py - 模块2
+>>>>from moduleA import name,funcA # 导入moduleA中的两个成员
+>>>>print(name) # 调用了moduleA中的变量
+>'moduleA'
+>>>>print(moduleA.name) # 两种调用方式都可以
+>'moduleA'
+>>>>funcA()  # 调用了moduleA中的函数
+>'Here in funcA.'
+>>>>moduleA.funcA()  # 两种调用方式都可以
+>'Here in funcA.'
+>
+>>>>name = 'moduleB' # 新定义一个重名变量
+>>>>print(name)
+>'moduleB' 
+>>>>from moduleA import name
+>>>>print(name) # 以后定义的为准
+>'moduleA'
+>```
+> **5）from <模块名> import \***
+> - 导入模块中的全部成员。
+> - 其它的内容与4中相同。
+>```
+># moduleA.py - 模块1
+>>>>name = 'moduleA'
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>
+># moduleB.py - 模块2
+>>>>from moduleA import * # 导入moduleA中的全部成员
+>>>>print(name) # 调用了moduleA中的变量
+>'moduleA'
+>>>>funcA()
+>'Here in funcA.'
+>```
+##### 3. 关于```if __name__ == "__main__":``` 的使用
+> - 在笔记(二）中，曾经提到过```__name__```是魔法函数，可以获得类的名称
+> - 如果直接在模块中使用```__name__```，则获得模块的名称
+>```
+>>>>print(__name__) # 如果是在本模块调用，则返回__main__。
+>'__main__'
+>
+>>>>import test
+>>>>test.__name__ # 如果是导入的模块，则返回模块名。
+>'test'
+>```
+> - 所以，```if __name__ == "__main__"```的含义就是在执行本文件时执行后面的程序，如果是导入的模块则跳过。
+> - 建议所有程序的入口都以此代码为入口。
+>```
+># moduleA.py - 模块1
+>>>>def funcA():
+>>>>    print('Here in funcA.')
+>>>>def funcB():
+>>>>    print('Here in funcB.')
+>>>>test2()  # 被当做模块导入时也会执行执行
+>>>>
+>>>>if __name__ == "__main__": # 只在本程序执行
+>>>>    test1()
+>Here in funcA.
+>Here in funcB.
+>
+># moduleB.py - 模块2
+>>>>import moduleA # 在使用模块时，test2()直接被执行了，但是test1并没有
+>Here in funcB.
+>```
+##### 4. 模块的路径
+> - 加载模块时，系统会在默认路径中寻找模块。
+> - 默认路径包括:当前目录、Python安装路径的lib库、环境变量PYTHONPATH中指定的路径列表等
+> - 可以通过```sys.path```查看默认路径列表
+>```
+>>>>import sys #导入sys包
+>>>>print(sys.path)
+>['D:\\PyCharm Community Edition 2019.1\\helpers\\pydev', 'D:\\PyCharm Community Edition 2019.1\\helpers\\third_party\\thriftpy', 'D:\\PyCharm Community Edition 2019.1\\helpers\\pydev', 'D:\\Python3.7\\python37.zip', 'D:\\Python3.7\\DLLs', 'D:\\Python3.7\\lib', 'D:\\Python3.7', 'C:\\Users\\xiaor\\PycharmProjects\\test\\venv', 'C:\\Users\\xiaor\\PycharmProjects\\test\\venv\\lib\\site-packages', 'C:\\Users\\xiaor\\PycharmProjects\\test\\venv\\lib\\site-packages\\setuptools-39.1.0-py3.7.egg', 'C:\\Users\\xiaor\\PycharmProjects\\test\\venv\\lib\\site-packages\\pip-10.0.1-py3.7.egg', 'C:\\Users\\xiaor\\PycharmProjects\\test', 'C:/Users/xiaor/PycharmProjects/test']
+>```
+> - 可以通过```sys.path.append```添加搜索路径
+>```
+>>>>import sys
+>>>>sys.append('d:\\test') # 添加新的搜索路径
+>>>>print(sys.path[-1])  # 获得list中最后一个地址
+>'d:\\test'
+>```
+> - 模块的加载顺序：内存中已经加载好的模块  >> python内置模块 >> sys.path路径
+##### 5. .pyc和.pyo文件
+> - Python解释器会在模块目录下创建\_\_pycache\_\_文件夹，并在文件夹内创建对应的.pyc文件
+> - .pyc文件是二进制文件，目的是加快解释速度且可以隐藏源代码。
+> - Python解释器在解释.py文件时，会优先查看是否有对应的最新的.pyc文件，有的话则直接加载.pyc文件。
+> - 最新的.pyc文件会被优先import，并可以被单独当做模块使用。
+> - .pyo文件与.pyc文件作用一致，是优化后的版本。
+## 二、包(Package)
+##### 1. 什么是包
+> - 包是用来组织管理代码的方式。
+> - 包里面存放的是模块。
+> - 可以将包理解为存放模块的文件夹。
+> - 包含一个文件名为```__init__.py```的文件
+##### 2. 包的结构
+> /包
+> /------/------  \_\_init\_\_.py文件
+> /------/------ 模块1
+> /------/------ 模块2
+> /------/------ 子包
+> /------/------/------ \_\_init\_\_.py文件
+> /------/------/------ 子模块1
+> /------/------/------  子模块2
+##### 3.关于\_\_init\_\_.py
+> - \_\_init\_\_.py是一个Python文件。
+> - 如果一个文件夹中包含\_\_init\_\_.py，Python就会把这个文件夹当做一个包。
+> - 访问包会默认访问\_\_init\_\_.py文件。
+> - 可以在\_\_init\_\_.py中添加导入包时默认导入的模块。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+>
+>#__init__.py
+>>>>import mypackage.moduleA # 默认导入moduleA，这里需要用全地址。
+>
+># 控制台
+>>>>import mypackage
+>>>>if __name__ == "__main__": 
+>>>>    print(mypackage.moduleA) # 可以直接从包中访问
+><module 'mypackage.moduleA' from 'D:\\mypackage\\moduleA.py'>
+>```
+> - 在导入包时，可以使用\_\_init\_\_.py中的内容。
+>```
+> /mypackage
+> /------/------ __init__.py
+>
+> # __init__.py文件
+>>>>def showPosition(): # 在__init__.py中创建方法
+>>>>    print('here in __init__.py')
+>
+># 控制台
+>>>>import mypackage 
+>>>>mypackage.showPosition()  # 可以直接调用__init__.py中的方法
+>'here in __init__.py'
+>```
+> - 可以在\_\_init\_\_.py中使用```__all__```定义from <包> import *时导入的模块包含哪些。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+> /------/------ moduleB
+>
+> # __init__.py文件
+>>>> __all__ = ['moduleA'] # 指定*只包含moduleA
+>
+># 控制台
+>>>>if __name__ == "__main__": 
+>>>>    from mypackage import *
+>>>>    print(moduleA) # 成功导入
+><module 'mypackage.moduleA' from 'mypackage\\__init__.py'>
+>>>>    print(moduleB) # 导入失败
+>NameError: name 'moduleB' is not defined
+>```
+##### 4.包的使用
+> 与模块相同，导入包需要使用import指令。
+> **1）import <包名>**
+> - 导入一个包。
+> - 可以使用\_\_init\_\_.py中的内容
+> - 用<包名>.<模块名>调用具体的模块。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+>
+># __init__
+>>>>import mypackage.moduleA
+>
+># moduleA
+>>>>def sayHi():
+>>>>    print('here in moduleA!'）
+>
+># 控制台
+>>>>import mypackage # 导入包
+>>>>if __name__ == "__main__": 
+>>>>    mypackage.moduleA.sayHi() # 调用包中模块的函数
+>'here in moduleA!'
+>```
+> **2）import <包名>.<模块名>**
+> - 导入包中的某个模块。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+>
+># moduleA
+>>>>def sayHi():
+>>>>    print('here in moduleA!'）
+>
+># 控制台
+>>>>import mypackage.moduleA # 直接导入包中的模块
+>>>>if __name__ == "__main__": 
+>>>>    moduleA.sayHi() # 调用模块的函数
+>'here in moduleA!'
+>```
+> **3）import <包名> as <自定义名>**
+> - 自定义包的名称。
+> - 注意，这种方法实际调用的是\_\_init\_\_.py中的内容。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+>
+># __init__
+>>>># import mypackage.moduleA 也可以
+>>>>__all__ = ['moduleA']
+>
+># moduleA
+>>>>def sayHi():
+>>>>    print('here in moduleA!'）
+>
+># 控制台
+>>>>import mypackage as mpkg # 导入包并自定义名称
+>>>>if __name__ == "__main__": 
+>>>>    mpkg.moduleA.sayHi() # 调用包中模块的函数
+>'here in moduleA!'
+>```
+> **4）from <包名> import <模块名>**
+> - 导入包中的模块。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+> /------/------ moduleB
+>
+>>>>from mypackage import moduleA,moduleB # 导入两个模块
+>>>>if __name__ == "__main__": 
+>>>>    print(moduleA)
+><module 'mypackage.moduleA' from 'D:\\mypackage\\moduleA.py'>
+>```
+> **5）from <包名> import \***
+> - 导入\_\_init\_\_.py中的所有模块。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+> /------/------ moduleB
+> /------/------ moduleC
+>
+># __init__.py
+>>>>__all__ = ['moduleA','moduleB']
+>
+># 控制台
+>>>>from mypackage import * # 导入所有__init__.py中的模块
+>>>>if __name__ == "__main__": 
+>>>>    print(moduleA)
+><module 'mypackage.moduleA' from 'D:\\mypackage\\moduleA.py'>
+>>>>    print(moduleC) # 未包含在__init__.py中
+>NameError: name 'moduleC' is not defined
+>```
+> **6）from <包名>.<模块名> import \***
+> - 导入包的某个模块中的所有内容。
+>```
+> /mypackage
+> /------/------ __init__.py
+> /------/------ moduleA
+>
+># __init__.py
+>>>>__all__ = ['moduleA']
+>
+># moduleA
+>>>>def sayHi():
+>>>>    print('here in moduleA')
+>
+># 控制台
+>>>>from mypackage.moduleA import *
+>>>>if __name__ == "__main__": 
+>>>>    sayHi() # 直接使用模块的函数名
+>'here in moduleA'
+>```
+##参考资料
+---
+- https://blog.csdn.net/u010138758/article/details/80152151  J-Ombudsman
+- https://www.cnblogs.com/zhuluqing/p/8832205.html moisiet
+- https://www.runoob.com 菜鸟教程
+- http://www.tulingxueyuan.com/ 北京图灵学院
+- http://www.imooc.com/article/19184?block_id=tuijian_wz#child_5_1 两点水
+- https://blog.csdn.net/weixin_44213550/article/details/91346411 python老菜鸟
+- https://realpython.com/python-string-formatting/ Dan Bader
+- https://www.liaoxuefeng.com/ 廖雪峰
+- https://blog.csdn.net/Gnewocean/article/details/85319590 新海说
+- 《Python学习手册》Mark Lutz
+- 《Python编程 从入门到实践》Eric Matthes
+---
+本文作者：大师兄(superkmi)
+![梦幻微武侠](https://upload-images.jianshu.io/upload_images/19742364-0b165e9d9cf51f71.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
