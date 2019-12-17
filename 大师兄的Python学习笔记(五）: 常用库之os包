@@ -1,0 +1,2214 @@
+## 一、关于os包
+> - os包在Python标准库中，在安装Python时会默认安装。
+> - os包通常用于处理系统相关的操作。
+> - 为了避免方法重名，我们通常用```import os```语句导入os包,而不是```from os import * ```。
+> - 通过os包可以实现跨平台操作。
+> - os.path模块主要用于文件属性操作(配合shutil模块）。
+> - 部分模块需要在Unix系统或iPython下使用。比如：os.fork, os.execv 和 os.spawn模块等等。
+> - 本文所有的案例默认已经`import os`。
+## 二、OS的相关方法
+##### 1. 当前进程和系统信息的相关方法
+> **1）os.name**
+> - 获得当前操作系统信息。
+> - 只会返回三个值，分别是posix , nt , java
+> - 分别对应Uinx系统(Linux和Mac系统都算)，Windows系统或Java虚拟机。
+>```
+>>>>import os
+>>>>os.name
+>'posix'
+>```
+> **2）os.ctermid()**
+> - 返回与进程控制终端对应的文件名,近在Unix中有效。
+>```
+>>>>os.ctermid()
+>'/dev/tty'
+>```
+> **3）os.environ**
+> - 用于获得系统信息。
+> - 返回类似dict的对象，可以用key查找value。
+> - 部分key如下：
+>```
+>Windows系统：
+>os.environ['HOMEPATH']:当前用户主目录。
+>os.environ['TEMP']:临时目录路径。
+>os.environ[PATHEXT']:可执行文件。
+>os.environ['SYSTEMROOT']:系统主目录。
+>os.environ['LOGONSERVER']:机器名。
+>os.environ['PROMPT']:设置提示符。
+>
+>Unix系统：
+>os.environ['HOME']:获得当前用户的主目录。
+>os.environ['USER']:当前使用用户。
+>os.environ['LC_COLLATE']:路径扩展的结果排序时的字母顺序。
+>os.environ['SHELL']:使用shell的类型。
+>os.environ['LAN']:使用的语言。
+>os.environ['SSH_AUTH_SOCK']:ssh的执行路径。
+>```
+>```
+>>>>os.environ['HOME']    
+>'/root'
+>```
+> **4）os.environb**
+> - 与os.environ相同，但返回的是字节。
+> - 只有在 os.supports_bytes_environ为True的时候 environb才是可用的(Windows不可用)。
+>```
+>>>>os.supports_bytes_environ
+>True
+>>>>os.environb[b'HOME'] # 参数也是字节。
+>b'/home/ubuntu'
+>```
+> **5）os.getcwd()**
+> - 获得当前Python的工作目录。
+>```
+>>>>os.getcwd()
+>'/home/ubuntu'
+>```
+> **6）os.chdir()**
+> - 改变当前工作目录到指定的路径。
+>```
+>>>>path = os.path.join('d:','\python3.7') # 制作了一个路径字符串
+>>>>os.chdir(path)
+>>>>os.getcwd()
+>'d:\\python3.7'
+>```
+> **7）os.fchdir(<fd>)**
+> - 在Windows下不能使用。
+> - 将当前工作目录改变为一个文件描述符<fd>表示的目录。
+> - 文件描述符必须指向一个打开的目录。
+>```
+>>>>path = '/home/ubuntu/sim-commu_pyServer' # 制作一个目录字符串
+>>>>file = os.open( path, os.O_RDONLY ) # 打开一个目录
+>>>>os.fchdir(file) 
+>>>>os.getcwd()
+>'/home/ubuntu/sim-commu_pyServer'
+>```
+> **8）os.fsencode(<filename>)**
+> - 将文件路径转码成二进制。
+> - 用于确保不同系统间的地址能够被正确编码。
+> - 与os.fsdecode互逆。
+>```
+>>>>path = os.path.join('d:','\\test.txt')
+>>>>os.fsencode(path)
+>b'd:\\test.txt'
+>```
+> **9）os.fsdecode(b<filename>)**
+> - 将二进制文件路径转码成字符串。
+> - 用于确保不同系统间的地址能够被正确解码。
+> - 与os.fsencode互逆。
+>```
+>>>>path = os.path.join('d:','\\test.txt')
+>>>>pathb = os.fsencode(path)
+>>>>os.fsdecode(pathb)
+>'d:\\test.txt'
+>```
+> **10）os.fspath(<path>)**
+> - 如果<path>是str或bytes路径对象，则返回<path>。
+> - 否则将抛出异常。
+>```
+>>>>path = os.path.join('d:','\\test.txt')
+>>>>os.fspath(path)
+> '\\test.txt'
+>
+>>>>i = 1
+>>>>os.fspath(i) # 会抛出TypeError
+>TypeError                                 Traceback (most recent call last)
+><ipython-input-44-12fb45f2d64f> in <module>
+>      1 i = 1
+>----> 2 os.fspath(i)
+>TypeError: expected str, bytes or os.PathLike object, not int
+>```
+>**11）class os.PathLike**
+> - 代表一个类路径。
+> - 可以返回str或bytes。
+>```
+>>>>import os
+>>>>class pathlike: 
+>>>>   def __init__(self, path):
+>>>>       self.path = path
+>>>>   def __fspath__(self): 
+>>>>       return self.path
+>>>>if __name__ == "__main__":
+>>>>   _path = pathlike(r'd:\test.txt')
+>>>>   print(os.fspath(_path))  
+>'d:\test.txt'
+>```
+>**12）os.getenv(<key>, <default=None>)**
+> - 获得一个系统环境变量值。
+> - 与os.environ()类似，不过如果环境变量不存在不会报错，而是返回None。
+>```
+>>>>import os
+>>>>os.getenv('PATH')
+>'/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
+>```
+>**13）os.getenvb(b<key>, <default=None>)**
+> - 与os.getenv相同，但是返回的是byte值。
+> - 在Windows下不可用。
+>```
+>>>>os.getenvb(b'PATH') # 输入的是bytes，返回的也是bytes
+>b'/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
+>```
+>**14）os.get_exec_path(<env=None>)**
+> - 获得环境变量PATH中所有的可执行文件。
+>```
+>>>>os.get_exec_path()
+>['/home/ubuntu/bin', '/home/ubuntu/.local/bin', '/home/ubuntu/anaconda3/condabin', >'/home/ubuntu/anaconda3/bin', '/home/ubuntu/anaconda3/bin', '/usr/local/sbin', '/usr/local/bin', '/usr/sbin', >'/usr/bin', '/sbin', '/bin', '/usr/games', '/usr/local/games', '/snap/bin']
+>```
+>**15）os.getegid()**
+> - 获得Unix系统中当前有效用户组的ID。
+> - 在Unix系统中可用。
+>```
+>>>>os.getegid()
+>500
+>```
+>**16）os.geteuid()**
+> - 获得Unix系统中当前有效用户的ID。
+> - 在Unix系统中可用。
+>```
+>>>>os.geteuid()
+>500
+>```
+>**17）os.getgid()**
+> - 获得Unix系统中当前实际用户组的ID。
+> - 在Unix系统中可用。
+>```
+>>>>os.getgid()
+>500
+>```
+>**18）os.getgrouplist(<user>, <group>)**
+> - 返回<user>所属的所有组列表。
+> - 在Unix系统中可用。
+>```
+>>>>os.getgrouplist(root,100) # 查看root用户属于哪些组。
+>[100]
+>```
+>**19）os.getgroups()**
+> - 返回当前进程对应的组ID列表。
+> - 在Unix系统中可用。
+>```
+>>>>os.getgroups()
+>[4, 24, 27, 30, 46, 115, 116, 500]
+>```
+>**20）os.getlogin()**
+> - 获取当前登录的用户。
+>```
+>>>>os.getlogin()
+>'xiaor'
+>```
+>**21）os.getpgid(<pid>)**
+> - 返回<pid>的进程组ID列表。
+> - 在Unix系统中可用。
+>```
+>>>>os.getpgid(29475)    
+>29475
+>```
+>**22）os.getpgrp()**
+> - 返回当时进程组ID。(命令调用时的）
+> - 在Unix系统中可用。
+>```
+>>>>os.getpgrp()
+>29475
+>```
+>**23）os.getpid()**
+> - 返回当前进程ID。(现在的）
+>```
+>>>>os.getpid()
+>29475
+>```
+>**24）os.getppid()**
+> - 返回父进程ID。
+>```
+>>>>os.getppid()
+>24866
+>```
+>**25）os.getpriority(<which>, <who>)**
+> - 获取程序调度优先级。
+> - <which> 参数值可以是 os.PRIO_PROCESS，os.PRIO_PGRP或os.PRIO_USER。
+> - <who> 是相对于 *which* 的进程标识符。
+> - 在Unix系统中可用。
+>```
+>>>>os.getpriority(os.PRIO_PROCESS, os.getpid())
+>0
+>```
+>**26）os.getresuid()**
+> - 返回一个由 (ruid, euid, suid) 所组成的元组，分别表示当前进程的真实用户ID，有效用户ID和甲暂存用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getresuid()
+>(500, 500, 500)
+>```
+>**27）os.getresgid()**
+> - 返回一个由 (rgid, egid, sgid) 所组成的元组，分别表示当前进程的真实组ID，有效组ID和暂存组ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getresgid()
+>(500, 500, 500)
+>```
+>**28）os.getuid()**
+> - 返回当前进程的真实用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getuid()
+>500
+>```
+>**29）os.initgroups(<username>, <gid>)**
+> - 初始化进程组的权限。
+> - 只能在Unix系统使用。
+>```
+>>>>os.initgroups('ubuntu',500)
+>```
+>**30）os.putenv(<key>, <value>)**
+> - 在当前shell中改变环境变量的值。
+> - 不会真正改变os.environ中的值。
+>```
+>>>>os.putenv('PATH','/usr') # 只是在shell中改变
+>>>>os.environ['PATH']      # 环境变量中并没有真正被改变
+>'/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'
+>```
+>**31）os.setegid(<egid>)**
+> - 设置当前进程的有效组ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getegid()
+>0
+>>>>os.setegid(10)
+>>>>os.getegid()  
+>10
+>```
+>**32）os.seteuid(<euid>)**
+> - 设置当前进程的有效用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.geteuid()
+>0
+>>>>os.seteuid(10)
+>>>>os.geteuid()  
+>10
+>```
+>**33）os.setgid(<gid>)**
+> - 设置当前进程的组ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getegid()
+>0
+>>>>os.setegid(10)
+>>>>os.getegid()  
+>10
+>```
+>**34）os.setgroups(<groups>)**
+> - 设置当前进程支持的groups id列表。
+> - 需要Unix系统的超级管理员使用。
+>```
+>>>>os.setgroups([])
+>```
+>**35）os.setpgrp()**
+> - 调用系统中的setpgrp()或setpgrp(0, 0)创建新进程。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setpgrp()
+>```
+>**36）os.setpgid(<pid>, <pgrp>)**
+> - 调用系统中的 setpgid()，将 pid 对应进程的组ID设置为 pgrp。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setpgid(0,6215)
+>>>>os.getpgid(0)     
+>6215
+>```
+>**37）os.setpriority(<which>, <who>, <priority>)**
+> - 设置程序调度优先级。
+> - which的值为os.PRIO_PROCESS，os.PRIO_PGRP或os.PRIO_USER之一。
+> - who会相对于 which被解析。
+> - priority 是范围在 -20 至 19 的值。 默认优先级为 0；较小的优先级数值会更优先被调度。
+>```
+>>>>os.getpriority(os.PRIO_PROCESS, os.getpid())
+>```
+>**38）os.setregid(<rgid>, <egid>)**
+> - 设置当前进程的真实和有效组ID。
+> - 只能在Unix系统使用。
+>```
+>>>>import os
+>>>>os.setregid(501,501)       
+>>>>os.getegid()
+>501
+>>>>os.getgid()
+>501
+>```
+>**39）os.setresgid(<rgid>, <egid>, <sgid>)**
+> - 设置当前进程的真实，有效和暂存组ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setresgid(502,502,502)
+>>>>os.getresgid()
+>(502, 502, 502)
+>```
+>**40）os.setresuid(<ruid>, <euid>, <suid>)**
+> - 设置当前进程的真实，有效和暂存用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setresuid(101, 101, 101)         
+>>>>os.getresuid()
+>(101, 101, 101)
+>```
+>**41）os.setreuid(<ruid>, <euid>)**
+> - 设置当前进程的真实和有效用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setreuid(101, 101)         
+>>>>os.getresuid()
+>(101, 101, 101)
+>```
+>**42）os.getsid(<pid>)**
+> - 获取当前会话。
+> - 只能在Unix系统使用。
+>```
+>>>>os.getsid(0)    
+>25306
+>```
+>**43）os.setsid()**
+> - 建立新的会话。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setsid()    
+>```
+>**44）os.setuid(<uid>)**
+> - 设置当前进程的用户ID。
+> - 只能在Unix系统使用。
+>```
+>>>>os.setuid(102)
+>>>>os.getuid()
+>102
+>```
+>**45）os.strerror(<code>)**
+> - 通过Linux系统错误码获取错误信息。
+> - 只能在Unix系统使用。
+>```
+>>>>code=1
+>>>>error = os.strerror(code)
+>>>>print(code,error) 
+>(1, 'Operation not permitted')
+>```
+>**46）os.supports_bytes_environ**
+> - 判断操作系统上原生环境类型是字节型。
+> ```
+>>>>os.supports_bytes_environ # 在windows下
+>False
+> ```
+>**47）os.umask(<mask>)**
+> - 设定当前权限掩码并返回之前的权限掩码。
+>```
+>>>>os.umask(24)
+>18
+>```
+>**48）os.uname()**
+> - 返回当前操作系统的识别信息。
+> - 返回值是一个有5个属性的对象。
+> - sysname - 操作系统名
+> - nodename - 机器在网络上的名称（需要先设定）
+> - release - 操作系统发行信息
+> - version - 操作系统版本信息
+> - machine - 硬件标识符
+> - 只能在Unix系统使用。
+>```
+>>>>os.uname()
+>('Linux', 'VM-0-4-ubuntu', '4.4.0-130-generic', '#156-Ubuntu SMP Thu Jun 14 08:53:28 UTC 2018', 'x86_64')
+>```
+>**49）os.unsetenv(<key>)**
+> - 用来删除一个环境变量 。
+> - 不会更新os.environ。
+> - 只能在Unix系统使用。
+>```
+>>>>os.environ['TERM']
+>'linux'
+>>>>os.unsetenv('TERM')
+>>>>os.environ['TERM'] 
+>'linux'
+>```
+##### 2. 文件描述符操作
+- 文件描述符（file descriptor）是内核为了高效管理已被打开的文件所创建的索引。
+- 文件描述符其是一个非负整数（通常是小整数），用于指向被打开的文件。
+- 所有执行I/O操作的系统调用都通过文件描述符。
+- 程序刚刚启动的时候，0是标准输入，1是标准输出，2是标准错误。
+- 如果此时去打开一个新的文件，它的文件描述符会是3。
+>**50）os.fdopen(<fd>, <\*args>, <\*\*kwargs>)**
+> - 打开一个文件描述符。
+> - 创建并返回一个文件对象。
+> - 文件描述符可以传递给其它低级函数。
+> - 通常用于依赖操作系统的API代码。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT ) # 打开文件描述符
+>>>>file_obj = os.fdopen(file,'w') # 创建文件对象
+>>>>file_obj.write('Hello World!') # 写入内容
+>>>>os.lseek(file, 0, 0) # 读取内容
+>>>>content = os.read(file,100)
+>>>>print(content)
+>b'Hello World!Hello World!'
+>```
+>**51）os.close(<fd>)**
+> - 关闭文件描述符。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.close(file)
+>```
+>**52）os.closerange(<fd_low>, <fd_high>)**
+> - 从低到高关闭全部文件描述符。 
+>```
+>>>>file1 = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>file2 = os.open( "test2.txt", os.O_RDWR|os.O_CREAT )
+>>>>file3 = os.open( "test3.txt", os.O_RDWR|os.O_CREAT )
+>>>>fd_low = min(file1,file2,file3) # 获取最低的描述符
+>>>>fd_high = max(file1,file2,file3) # 获取最高的描述符
+>>>>os.closerange(fd_low,fd_high)
+>```
+>**53）os.copy_file_range(<src>, <dst>, <count>, <offset_src=None>, <offset_dst=None>)**
+> - 从文件描述符<src>复制<count>字节。
+> - 从偏移量<offset_src>开始读取，到文件描述符<dst>，从偏移量<offset_dst>开始写入。
+>```
+>>>>file1 = os.open( "test.txt", os.O_RDWR|os.O_CREAT ) # 读取描述符
+>>>>file2 = os.open( "test.txt", os.O_RDWR|os.O_CREAT ) # 目标描述符
+>>>>file_obj = os.fdopen(file1,'w')
+>>>>file_obj.write('Hello World!')
+>>>>os.copy_file_range(file1, file2, 10, 1)
+>```
+>**54）os.device_encoding(<fd>)**
+> - 如果连接到终端，则返回一个与 *fd* 关联的编码字符串。
+> - 否则返回 None。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>print(os.device_encoding(file))
+>UTF-8
+>```
+>**55）os.dup(<fd>)**
+> - 用于复制文件描述符 fd。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>file_obj = os.fdopen(file,'w')
+>>>>file_obj.write('Hello World!')
+>>>>os.lseek(file, 0, 0) 
+>>>>file_copy = os.dup(file)
+>>>>os.read(file_copy,100)
+>b'Hello World!'
+>```
+>**56）os.dup2(<fd>, <fd2>, <inheritable=True>)**
+> - 把文件描述符 <fd> 复制为 <fd2>。
+> - 必须要先关闭后者。
+>```
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>file_dup = os.open( "test2.txt", os.O_RDWR|os.O_CREAT )
+>>>>file_obj = os.fdopen(file,'w')
+>>>>file_obj.write('Hello World!')
+>>>>os.lseek(file, 0, 0) 
+>>>>os.dup2(file,file_dup)
+>>>>os.read(file_dup,100)
+>b'Hello World!'
+>```
+>**57）os.fchmod(<fd>, <mode>)**
+> - 将 fd 指定文件的权限状态修改为 mode。
+> - 与os.chmod()相同。
+> - mode可以是一下一个或多个组成，用|隔开：
+>
+>指令|作用
+>:--:|:--:
+> - stat.S_ISUID|设置 UID 位
+> - stat.S_ISGID| 设置组 ID 位
+> - stat.S_ENFMT| 系统文件锁定的执法行动
+> - stat.S_ISVTX|在执行之后保存文字和图片
+> - stat.S_IREAD|对于拥有者读的权限
+> - stat.S_IWRITE|对于拥有者写的权限
+> - stat.S_IEXEC|对于拥有者执行的权限
+> - stat.S_IRWXU|对于拥有者读、写、执行的权限
+> - stat.S_IRUSR|对于拥有者读的权限
+> - stat.S_IWUSR|对于拥有者写的权限
+> - stat.S_IXUSR|对于拥有者执行的权限
+> - stat.S_IRWXG|对于同组的人读写执行的权限
+> - stat.S_IRGRP|对于同组读的权限
+> - stat.S_IWGRP|对于同组写的权限
+> - stat.S_IXGRP|对于同组执行的权限
+> - stat.S_IRWXO|对于其他组读写执行的权限
+> - stat.S_IROTH|对于其他组读的权限
+> - stat.S_IWOTH|对于其他组写的权限
+> - stat.S_IXOTH|对于其他组执行的权限
+> - 只能在Unix系统使用。
+>```
+>>>>import os,stat
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.fchmod( file, stat.S_IXGRP) 
+>```
+>**58）os.fchown(<fd>, <uid>, <gid>)**
+> - 修改文件所有权的uid(用户id) 和 gid(用户组id)。
+> - 若不想变更其中的某个 ID，可将相应值设为 -1。
+> - 与os.chown()相同。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT ) 
+>>>>os.fchown(file,101,24)
+>```
+>**59）os.fdatasync(<fd>)**
+> - 强制将文件描述符 fd 指定文件写入磁盘。不强制更新元数据。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,'Hello World!')
+>>>>os.fdatasync(file)
+>>>>os.lseek(file,0,0)
+>>>>os.read(file,100)
+>>>>os.read(file,100)
+>'Hello World!'
+>```
+>**60）os.fpathconf(<fd>, <name>)**
+> - 返回一个打开的文件的系统配置信息。
+> - 与os.pathconf()相同。
+> - <name>包括:
+>
+>序号|指令
+>:--:|:--:
+>0|'PC_LINK_MAX'
+>1|'PC_MAX_CANON'
+>2|'PC_MAX_INPUT'
+>3|'PC_NAME_MAX'
+>4|'PC_PATH_MAX'
+>5|'PC_PIPE_BUF'
+>6|'PC_CHOWN_RESTRICTED'
+>7|'PC_NO_TRUNC'
+>8|'PC_VDISABLE'
+>9|'PC_SYNC_IO'
+>10|'PC_ASYNC_IO'
+>11|'PC_PRIO_IO'
+>12|'PC_SOCK_MAXBUF'
+>13|'PC_FILESIZEBITS'
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>patchconf = os.fpathconf(file,'PC_NAME_MAX')
+>>>>print(patchconf)
+>255
+>```
+>**61）os.fstat(<fd>)**
+> - 获取文件描述符 *fd* 的状态. 返回一个stat_result对象。
+> - 与os.stat()相同。
+>```
+>>> file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.fstat(file)
+>posix.stat_result(st_mode=32776, st_ino=344345, st_dev=64769, st_nlink=1, st_uid=101, st_gid=24, st_size=12, st_atime=1574863732, st_mtime=1574864730, st_ctime=1574864730)
+>```
+>**62）os.fstatvfs(<fd>)**
+> - 用于返回包含文件描述符fd的文件的文件系统的信息。
+> - 与statvfs()指令类似。
+> - 返回内容解构：
+>
+>指令|功能
+>:--:|:--:
+>f_bsize|文件系统块大小
+>f_frsize|分栈大小
+>f_blocks|文件系统数据块总数
+>f_bfree|可用块数
+>f_bavail|非超级用户可获取的块数
+>f_files|文件结点总数
+>f_ffree|可用文件结点数
+>f_favail|非超级用户的可用文件结点数
+>f_fsid|文件系统标识 ID
+>f_flag|挂载标记
+>f_namemax|最大文件长度
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.fstatvfs(file)   
+>posix.statvfs_result(f_bsize=4096, f_frsize=4096, f_blocks=12868511, f_bfree=11213422, f_bavail=10553980, f_files=3276800, f_ffree=3099984, f_favail=3099984, f_flag=1024, f_namemax=255)
+>```
+>**63）os.fsync(<fd>)**
+> - 强制将文件描述符为<fd>的文件写入硬盘。
+>```
+>>>>import os
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b"test")
+>>>>os.fsync(file) # 这里强制写入硬盘
+>>>>os.lseek(file, 0, 0)
+>>>>print(os.read(file, 100))
+>b'test'
+>```
+>**64）os.ftruncate(<fd>, <length>)**
+> - 将文件描述符 <fd>与 指向的文件切分开，以使其最大为<length> 字节。
+> - 与os.truncate()等效。
+>```
+>>>>import os
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b"Hello World!")
+>>>>os.ftruncate(file, 5) # 这里限制了最大字节为5
+>>>>os.lseek(file, 0, 0)
+>>>>print(os.read(fd, 100))
+>b'Hello'
+>```
+>**65）os.get_blocking(<fd>)**
+> - 获取文件描述符的阻塞模式。
+> - 如果设置了 O_NONBLOCK标志位，返回 False。
+> - 如果该标志位被清除，返回True。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.get_blocking(file)
+>True
+>```
+>**66）os.isatty(<fd>)**
+> - 判断如果文件描述符<fd>是打开的。
+> - 如果同时与字符终端tty(-like)设备相连，则返回true, 否则False。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(fd,b"Hello World!")
+>>>>os.close(file)
+>>>>os.isatty(file)
+>False
+>```
+>**67）os.lockf(<fd>, <cmd>, <len>)**
+> - 使用、测试或取消<fd>的Posix锁。
+> - <cmd>包括:os.F_LOCK,os.F_TLOCK,os.F_ULOCK,os.F_TEST
+> - <len>表示锁定<fd>的位置。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.lockf(file,os.F_LOCK,100)
+>```
+>**68）os.lseek(<fd>, <pos>, <how>)**
+> - 设置文件描述符 <fd> 当前位置为 <pos>, 并以<how> 方式修改。
+> - <how>方法包括：
+>
+> 方法|含义
+>:--:|:--:
+> os.SEEK_SET 或者 0|设置从文件开始的计算的<pos>;
+> os.SEEK_CUR或者 1|从当前位置计算;
+> os.SEEK_END或者2|从文件尾部开始。
+>```
+>>>>fd = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(fd, b"Hello World!")
+>>>>os.lseek(fd, 2,0 ) # 指定当前位置为2
+>>>>os.read(fd, 100)
+>b'llo World!'
+>```
+>**69）os.open(<path>, <flags>, <mode=0o777>, \*, <dir_fd=None>)**
+> - 用于打开一个文件<path>，并且设置需要的打开选项<flags>
+> - 模式参数mode参数是可选的，默认为 0777。
+> - <flags>包含以下参数:
+>
+> 方法|含义
+>:--:|:--:
+>os.O_RDONLY|以只读的方式打开
+>os.O_WRONLY| 以只写的方式打开
+>os.O_RDWR | 以读写的方式打开
+>os.O_NONBLOCK| 打开时不阻塞
+>os.O_APPEND| 以追加的方式打开
+>os.O_CREAT| 创建并打开一个新文件
+>os.O_TRUNC| 打开一个文件并截断它的长度为零（必须有写权限）
+>os.O_EXCL| 如果指定的文件存在，返回错误
+>os.O_SHLOCK| 自动获取共享锁
+>os.O_EXLOCK| 自动获取独立锁
+>os.O_DIRECT| 消除或减少缓存效果
+>os.O_FSYNC | 同步写入
+>os.O_NOFOLLOW| 不追踪软链接
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>```
+>**70）os.openpty()**
+> - 用于打开一个新的伪终端对。
+> - 返回 pty(主) 和 tty(从)的文件描述符。
+> - 只能在Unix系统使用。
+>```
+>>>>pty,tty = os.openpty()
+>>>>print(pty)
+>6
+>>>>print(tty)
+>7
+>```
+>**71）os.pipe()**
+> - 创建一个管道, 返回一对文件描述符(r, w) 分别为读和写。
+>```
+>>>>import os
+>>>>r,w = os.pipe()
+>>>>w = os.fdopen(w,'w')
+>>>>r = os.fdopen(r)
+>>>>w.write('Hello World!')
+>>>>w.close()
+>>>>print(r.read())
+>>>>r.close()
+>Hello World!
+>```
+>**72）os.pipe2(<flag>)**
+> - 与os.pipe相同，创建一个管道，返回一对文件描述符（r,w）分别为读和写。
+> - <flag>包含两个参数O_NONBLOCK和O_NDELAY。
+> - O_NONBLOCK和O_NDELAY所产生的结果都是使I/O变成非阻塞模式(non-blocking)，在读取不到数据或是写入缓冲区已满会马上return，而不会阻塞等待。
+> - O_NDELAY是在System V的早期版本中引入的,建议使用O_NONBLOCK。
+> - 只能在Unix系统使用。
+> ```
+>>>>import os
+>>>>flag = os.O_NONBLOCK
+>>>>r,w = os.pipe2(flag)
+>>>>w = os.fdopen(w,'w')
+>>>>r = os.fdopen(r)
+>>>>w.write('Hello World!')
+>>>>w.close()
+>>>>print(r.read())
+>Hello World!
+>>>>r.close()
+> ```
+>**73）os.posix_fallocate(<fd>, <offset>, <len>)**
+> - 为文件描述符<fd>关联的文件预留磁盘空间。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT ) 
+>>>>os.posix_fallocate(file,0,10)
+>```
+>**74）os.posix_fadvise(<fd>, <offset>, <len>, <advice>)**
+> - 用于预读<fd>所关联文件占用的缓存。
+> - <advice>包含以下参数:
+>
+> 参数|建议|功能
+>:--:|:--:|:--:
+>POSIX_FADV_NORMAL|                         无特别建议     |                                 重置预读大小为默认值
+>POSIX_FADV_SEQUENTIAL       |         将要进行顺序操作                |           设预读大小为默认值的2 倍
+>POSIX_FADV_RANDOM             |           将要进行随机操作          |                 将预读大小清零（禁止预读）
+>POSIX_FADV_NOREUSE         |            指定的数据将只访问一次         |     （暂无动作）
+>POSIX_FADV_WILLNEED      |              指定的数据即将被访问           |         立即预读数据到page cache
+>POSIX_FADV_DONTNEED    |              指定的数据近期不会被访问       |     立即从page cache 中丢弃数据
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.posix_fadvise(file,0,10,os.POSIX_FADV_NORMAL)
+>```
+>**75）os.pread(<fd>, <n>, <offset>)**
+> - 实际作用与os.read+os.lseek函数作用相同。
+> - 区别是pread执行后，不会改变文件指针的偏移。
+> - 且pread是原子操作，无法中断其定位和读操作。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b'Hello World!')
+>>>>os.pread(file,20,0)  
+>b'Hello World!'
+>```
+>**76）os.preadv(<fd>, <buffers>, <offset>, <flags=0>)**
+> - 结合了 os.readv() 与 os.pread() 的功能。
+> - <flags>可以是0,os.RWF_HIPRI或os.RWF_NOWAIT。
+> - 只能在Unix系统使用。
+>
+>**77）os.RWF_NOWAIT**
+> - 作为参数存在。
+> - 如果无法马上获取数据则不等待。
+> - 数据到位后再返回flag处读取数据。
+> - 只能在Unix系统4.14版本以上使用。
+>
+>**78）os.RWF_NOWAIT**
+> - 作为参数存在。
+> - 高读写优先级，会降低延迟，但可能会消耗更多资源。
+> - 只能在Unix系统4.6版本以上使用。
+>
+>**79）os.pwrite(<fd>, <str>, <offset>)**
+> - 带偏移量地原子的从文件中写入数据。
+> - 写入后文件指针不变。
+> - 只能在Unix系统使用。
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b'Hello World!')
+>>>>os.pwrite(file,b'to you',5) # 从第五个字符开始写入
+>>>>print(os.pread(file,20,0))
+>b'Helloto you!'
+>```
+>**80）os.pwritev(<fd>, <buffers>, <offset>, <flags=0>)**
+> - 结合了 os.writev() 和 os.pwrite() 的功能。
+> - <flags>可以是0,os.RWF_DSYNC或os.RWF_SYNC。
+> - 只能在Unix系统使用。
+>
+>**81）os.RWF_DSYNC**
+> - 作为参数存在。
+> - 用于保证磁盘上实际文件系统与缓冲区高速缓存中内容的一致性。
+> - 相当于os.DSYNC的预写。
+> - 只接受系统写入。
+> - 只能在Unix系统4.7版本以上使用。
+>
+>**82）os.RWF_SYNC**
+> - 作为参数存在。
+> - 用于保证磁盘上实际文件系统与缓冲区高速缓存中内容的一致性。
+> - 相当于os.SYNC的预写。
+> - 只接受系统写入。
+> - 只能在Unix系统4.7版本以上使用。
+>
+>**83）os.read(<fd>, <n>)**
+> - 从文件描述符<fd>中读取最多 <n> 个字节。
+> - 返回包含读取字节的字符串，如果<fd>对应文件已达到结尾, 返回一个空字符串。
+>```
+>>>>file = os.open( "test2.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b'Hello World!')
+>>>>os.lseek(file,0,0)
+>>>>os.read(file,20)
+>b'Hello World!'
+>```
+>**84）os.sendfile(<out>, <in>, <offset>, <count>, <flags=0>))**
+> - 从<in>的<offset>位置，复制<count>个字节到<out>。
+> - <flags>可以是os.SF_NODISKIO、os.SF_MNOWAIT或os.SF_SYNC。
+> - 只能在Unix系统使用。
+>```
+>>>>file1 = os.open( "test1.txt", os.O_RDWR|os.O_CREAT )
+>>>>file2 = os.open( "test2.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file1,b'Hello World!')
+>>>>os.sendfile(file2,file1,2,4) # 从第二个字节开始复制4个字节
+>4
+>>>>os.pread(file2,20,0)
+>b'llo '
+>```
+>**85）os.set_blocking(fd, blocking)**
+> - 设置<fd>的阻塞模式。
+> - 如果没有阻塞，则设置<blocking>为os.O_NONBLOCK。
+> - 只能在Unix系统使用。 
+>```
+>>> file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>> os.set_blocking(file,os.O_NONBLOCK)
+>```
+>**86）os.readv(<fd>, <buffers>)**
+> - 用于将数据从文件描述符读到分散的内存块<buffers>中。
+> - 只能在Unix系统使用。 
+>
+>**87）os.tcgetpgrp(<fd>)**
+> - 返回与<fd>关联的进程组。
+> - 只能在Unix系统使用。 
+>```
+>>>>file = os.open( "test.txt", os.O_RDONLY )
+>>>>os.tcgetpgrp(file)
+>2673
+>```
+>**88）os.tcsetpgrp(<fd>, <pg>)**
+> - 将<fd>关联的进程组设置为<pg>。
+> - 只能在Unix系统使用。 
+>```
+>>>>file = os.open( "test.txt", os.O_RDONLY )
+>>>>os.tcsetpgrp(file,2020)
+>>>>os.tcgetpgrp(file)
+>2020
+>```
+>**89） os.ttyname(<fd>)**
+> - 返回与<fd>关联的终端设备名。
+> - 如果<fd> 没有与终端设备关联，则引发一个异常。
+> - 只能在Unix系统使用。 
+>
+>**90） os.write(<fd>, <str>)**
+> - 用于写入<str>到<fd> 中。
+> - 返回实际写入的字符串长度。
+> - 只能在Unix系统使用。 
+>```
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.write(file,b'Hello World!')
+>12
+>>>>os.pread(file,20)
+>b'Hello World!'
+>```
+>**91）os.writev(<fd>, <buffers>)**
+> - 将多块分散的内存<buffers>一并写入文件描述符中。
+> - 只能在Unix系统使用。 
+>
+>**92）os.get_terminal_size(fd=STDOUT_FILENO)**
+> - 获取<fd>关联的终端尺寸。
+>```
+>>>>os.get_terminal_size()
+>os.terminal_size(columns=164, lines=25)
+>```
+>**93）os.get_inheritable(<fd>)**
+> - 用于判断<fd>是否可以被继承。
+>```
+>>>> file = os.open( "test.txt", os.O_RDONLY )
+>>>> os.get_inheritable(file)
+>False
+>```
+>**94）os.set_inheritable(<fd>, <inheritable>)**
+> - 用于设置<fd>是否可以被继承。
+>```
+>>>> file = os.open( "test.txt", os.O_RDONLY )
+>>>> os.set_inheritable(file,True)
+>>>> os.get_inheritable(file)
+>True
+>```
+>**95）os.get_handle_inheritable(<handle>)**
+> - 用于判断句柄<handle>是否可以被继承。
+> - 只能在Windows系统使用。 
+>```
+>>>>import os
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.get_handle_inheritable(file)
+>```
+>**96）os.set_handle_inheritable(<handle>, <inheritable>)**
+> - 用于设置句柄<handle>是否可以被继承。
+> - 只能在Windows系统使用。 
+>```
+>>>>import os
+>>>>file = os.open( "test.txt", os.O_RDWR|os.O_CREAT )
+>>>>os.set_handle_inheritable(file, False)
+>>>>os.get_handle_inheritable(file)
+>False
+>```
+##### 3. 文件和路径
+>**97）os.access(<path>, <mode>, \*, <dir_fd=None>, <effective_ids=False>, <follow_symlinks=True>)**
+> - 检验是否有权限访问路径。
+> - <mode>包括：
+>
+> 参数|功能
+>:--:|:--:
+>os.F_OK|测试path是否存在。
+>os.R_OK|测试path是否可读。
+>os.W_OK|测试path是否可写。
+>os.X_OK|测试path是否可执行
+>```
+>>>>os.access('c:', os.F_OK)
+>True
+>```
+>**98）os.chdir(<path>)**
+> - 改变当前工作目录到指定的路径<path>。
+>```
+>>>>import os
+>>>>print(os.getcwd())
+>C:\Users\xiaor
+>>>>os.chdir('D:')
+>>>>print(os.getcwd())
+>D:\
+>```
+>**99）os.chflags(<path>, <flags>, \*, <follow_symlinks=True>)**
+> - 用于设置路径的标记为数字标记。
+> - 多个标记可以使用 OR 来组合起来。
+> - <flags>可以包含：
+>
+> 参数|功能
+>:--:|:--:
+>stat.UF_NODUMP|非转储文件
+>stat.UF_IMMUTABLE|文件是只读的
+>stat.UF_APPEND|文件只能追加内容
+>stat.UF_NOUNLINK|文件不可删除
+>stat.UF_OPAQUE|目录不透明，需要通过联合堆栈查看
+>stat.SF_ARCHIVED|可存档文件(超级用户可设)
+>stat.SF_IMMUTABLE|文件是只读的(超级用户可设)
+>stat.SF_APPEND|文件只能追加内容(超级用户可设)
+>stat.SF_NOUNLINK| 文件不可删除(超级用户可设)
+>stat.SF_SNAPSHOT|快照文件(超级用户可设)
+> - 只能在Unix系统使用。 
+>```
+>>>> import os, stat
+>>>> flag = stat.UF_APPEND 
+>>>> os.chflags('test.txt',flag)
+>```
+>**100）os.chmod(<path>, <mode>, \*, <dir_fd=None>, <follow_symlinks=True>)**
+> - 用于更改文件或目录的权限。
+> - <mode>可以包含：
+>
+> 参数|功能
+>:--:|:--:
+>stat.S_IXOTH|其他用户有执行权0o001
+>stat.S_IWOTH| 其他用户有写权限0o002
+>stat.S_IROTH| 其他用户有读权限0o004
+>stat.S_IRWXO| 其他用户有全部权限(权限掩码)0o007
+>stat.S_IXGRP| 组用户有执行权限0o010
+>stat.S_IWGRP| 组用户有写权限0o020
+>stat.S_IRGRP| 组用户有读权限0o040
+>stat.S_IRWXG| 组用户有全部权限(权限掩码)0o070
+>stat.S_IXUSR| 拥有者具有执行权限0o100
+>stat.S_IWUSR| 拥有者具有写权限0o200
+>stat.S_IRUSR| 拥有者具有读权限0o400
+>stat.S_IRWXU| 拥有者有全部权限(权限掩码)0o700
+>stat.S_ISVTX| 目录里文件目录只有拥有者才可删除更改0o1000
+>stat.S_ISGID| 执行此文件其进程有效组为文件所在组0o2000
+>stat.S_ISUID| 执行此文件其进程有效用户为文件所有者0o4000
+>stat.S_IREAD| windows下设为只读
+>stat.S_IWRITE| windows下取消只读
+>```
+>>>>import os,stat
+>>>>os.open('test.txt',os.O_RDWR|os.O_CREAT)
+>>>>os.chmod('test.txt',stat.S_IXOTH)
+>```
+>**101）os.chown(<path>, <uid>, <gid>, \*, <dir_fd=None>, <follow_symlinks=True>)**
+> - 用于更改文件所有者。
+> - <uid>为用户所属ID。
+> - <gid>为用户所属组。
+> - 如果不修改可以设置为 -1。
+> - 只能在Unix系统使用。 
+>```
+>>>> os.chown('test.txt',500,501)
+>```
+>**102）os.chroot(<path>)**
+> - 用于更改当前进程的根目录为指定的目录。
+> - 只能在Unix系统使用。 
+>```
+>>>> os.getcwd()
+>'/home/ubuntu'
+>>>> os.chroot('/home/ubuntu');
+>>>> os.getcwd()               
+>'/'
+>```
+>**103）os.fchdir(<fd>)**
+> - 将当前工作目录更改为由文件描述符<fd>表示的目录。
+> - 只能在Unix系统使用。 
+>```
+>>>> file = os.open('/home/ubuntu',os.O_RDONLY)
+>>>> os.fchdir(file)
+>>>> os.getcwd()
+>'/home/ubuntu'
+>```
+>**104）os.getcwd()**
+> - 获得当前的工作目录。
+>```
+>>>> os.getcwd()
+>'/home/ubuntu'
+>```
+>**105）os.getcwdb()**
+> - 获得当前的工作目录。
+>```
+>>>> os.getcwdb()
+>b'/home/ubuntu'
+>```
+>**106）os.lchflags(<path>, <flags>)**
+> - 用于设置路径的标记为数字标记。
+> - <flags>与chflags()的参数相同。
+> - 类似 os.chflags()，但是没有软链接
+> - 只能在Unix系统使用。 
+>```
+>>>> import os, stat
+>>>> flag = stat.UF_APPEND 
+>>>> os.lchflags('test.txt',flag)
+>```
+>**107）os.lchmod(<path>, <mode>)**
+> - 用于修改连接文件权限。
+> - <mode>参数与os.chmod()相同。
+> - 只能在Unix系统使用。 
+>```
+>>>>os.lchmod('test.txt',stat.S_IXOTH)
+>```
+>**108）os.lchown(<path>, <uid>, <gid>)**
+> - 用于更改文件所有者，类似 chown。
+> - 但是不追踪链接。
+> - 只能在Unix系统使用。
+>```
+>>>> os.lchown('test.txt',500,501)
+>```
+>**109）os.link(<src>, <dst>, \*,<src_dir_fd=None>, <dst_dir_fd=None>, <follow_symlinks=True>)**
+> - 用于创建硬链接。
+> - 硬连接的源地址为参数为 <dst>，硬连接的目标地址参数为 <src>。
+>```
+>>>>file = os.open('test1.txt',os.O_RDWR|os.O_CREAT)
+>>>>os.link('test1.txt','test2.txt')
+>```
+>**110）os.listdir(path='.')**
+> - 返回指定的文件夹包含的文件或文件夹的名字的列表。
+> - 默认为当前文件夹。
+>```
+>>>>os.listdir()
+>>>> os.listdir()
+>['~', 'test.txt', 'test1.txt','test2.txt']
+>```
+>**111）os.lstat(<path>, \*, <dir_fd=None>)**
+> - 返回文件的信息。
+> - 类似 os.stat() ,但是没有软链接。
+>```
+>>>>os.lstat('d:')
+>os.stat_result(st_mode=16895, st_ino=1407374883553285, st_dev=1544123431, st_nlink=1, st_uid=0, st_gid=0, st_size=8192, st_atime=1575036233, st_mtime=1575036233, st_ctime=1530322701)
+>```
+>**112）os.mkdir(<path>, <mode=0o777>, \*, <dir_fd=None>)**
+> - 以数字权限模式创建目录。
+> - 默认的模式为 0777 (八进制)。
+> - 如果中间层文件夹不存在，则报错。
+>```
+>>>>os.mkdir('d:\\test')
+>>>>os.path.isdir('d:\\test') # 判断目录是否存在
+>True
+>
+>>>>os.mkdir('d:\\test1\\test\\test') # 中间层文件夹不存在，所以报错。
+>FileNotFoundError                         Traceback (most recent call last)
+><ipython-input-41-5d6e02fea36b> in <module>
+>----> 1 os.mkdir('d:\\test1\\test\\test')
+>```
+>**113）os.makedirs(<name>, <mode=0o777>, <exist_ok=False>)**
+> - 用于递归创建目录。
+> - 像 mkdir(), 如果中间层文件夹不存在，则创建中间层文件夹。
+>```
+>>>>os.makedirs('d:\\test1\\test1')
+>>>>os.path.isdir('d:\\test1\\test1')
+>True
+>```
+>**114）os.mkfifo(<path>, <mode=0o666>, \*, <dir_fd=None>)**
+> - 用于创建指令路径的管道，并设置权限模式。
+> - 默认的模式为 0666 (八进制)。
+> - 只能在Unix系统使用。
+>```
+>>>>os.mkfifo('/home/ubuntu/test') 
+>>>>os.stat('/home/ubuntu/test')
+>os.stat_result(st_mode=4532, st_ino=344344, st_dev=64769, st_nlink=1, st_uid=500, st_gid=500, st_size=0, st_atime=1575037833, st_mtime=1575037833, st_ctime=1575037833)
+>```
+>**115）os.mknod(<path>, <mode=0o600>, <device=0>, \*, <dir_fd=None>)**
+> - 用于创建一个指定文件名的文件系统节点。
+> - 只能在Unix系统使用。
+>```
+>>>> os.mknod('/home/ubuntu/inode')
+>>>> os.stat('/home/ubuntu/inode')
+>os.stat_result(st_mode=33152, st_ino=344349, st_dev=64769, st_nlink=1, st_uid=500, st_gid=500, st_size=0, st_atime=1575038235, st_mtime=1575038235, st_ctime=1575038235)
+>```
+>**116）os.major(<device>)**
+> - 从原始的设备号中提取设备的major号码。
+> - major号表示设备的主设备号。
+>```
+>>>> info = os.lstat('test.txt')
+>>>> os.major(info.st_dev)
+>253
+>```
+>**117）os.minor(<device>)**
+> - 从原始的设备号中提取设备的minor号码。
+> - minor号表示设备的次设备号。
+>```
+>>>> info = os.lstat('test.txt')
+>>>> os.minor(info.st_dev)
+>1
+>```
+>**118）os.makedev(<major>, <minor>)**
+> - 以major和minor设备号组成一个原始设备号。
+>```
+>>>> info = os.lstat('test.txt')
+>>>> major = os.major(info.st_dev)
+>>>> minor = os.minor(info.st_dev)
+>>>> os.makedev(major,minor)
+>64769
+>```
+>**119）os.pathconf(<path>,<name>)**
+> - 返回一个打开的文件的系统配置信息。
+> - <name>是检索的系统配置的值，它也许是一个定义系统值的字符串，这些名字在很多标准中指定（POSIX.1, Unix 95, Unix 98, 和其它）。一些平台也定义了一些额外的名字。这些名字在主操作系统上pathconf_names的字典中。对于不在pathconf_names中的配置变量，传递一个数字作为名字，也是可以接受的。
+> - 只能在Unix系统使用。
+>```
+>>>> file = os.open('text.txt',os.O_RDWR|os.O_CREAT)
+>>>> os.fpathconf(file,1)   
+>255
+>```
+>**120）os.pathconf_names**
+> - 返回系统路径的环境变量，可以作为os.poathcof()和fpathconf()的参数。
+> - 只能在Unix系统使用。
+>```
+>>>> os.pathconf_names
+>{'PC_ALLOC_SIZE_MIN': 18, 'PC_ASYNC_IO': 10, 'PC_CHOWN_RESTRICTED': 6, 'PC_FILESIZEBITS': 13, 'PC_LINK_MAX': 0, 'PC_MAX_CANON': 1, 'PC_MAX_INPUT': 2, 'PC_NAME_MAX': 3, 'PC_NO_TRUNC': 7, 'PC_PATH_MAX': 4, 'PC_PIPE_BUF': 5, 'PC_PRIO_IO': 11, 'PC_REC_INCR_XFER_SIZE': 14, 'PC_REC_MAX_XFER_SIZE': 15, 'PC_REC_MIN_XFER_SIZE': 16, 'PC_REC_XFER_ALIGN': 17, 'PC_SOCK_MAXBUF': 12, 'PC_SYMLINK_MAX': 19, 'PC_SYNC_IO': 9, 'PC_VDISABLE': 8}
+>```
+>**121）os.readlink(<path>, \*, <dir_fd=None>)**
+> - 返回软链接所指向的文件,<path> 到 <dir_fd>。
+> - 可能返回绝对或相对路径。
+> - 只能在Unix系统使用。
+>```
+>>>> os.symlink('test1.txt','test2.txt')
+>>>> path = os.readlink('test2.txt')
+>>>> print(path)
+>test1.txt
+>```
+>**122）os.remove(<path>, \*, <dir_fd=None>)**
+> - 用于删除指定路径的文件。
+> - 不可以用于删除目录。
+>```
+>>>> os.remove('text.txt') 
+>>>> os.path.isfile('text.txt') # 判断文件是否存在
+>False
+>```
+>**123）os.removedirs(<name>)**
+> - 用于删除目录。
+> - 采用递归的方式，先删除子目录内容，再删除父目录。
+>```
+>>>>os.mkdir('test') # 创建目录
+>>>>print(os.path.isdir('test'))  # 判断目录是否存在
+>True
+>>>>os.removedirs('test')
+>>>>print(os.path.isdir('test')) # 证明目录已被删除
+>False
+>```
+>**124）os.rename(<src>, <dst>, \*, <src_dir_fd=None>, <dst_dir_fd=None>)**
+> - 将<src>重命名为<dst>
+> - <src>可以是文件或目录
+>```
+>>>>os.mkdir('test1') 
+>>>>print(os.path.isdir('test1'))
+>True
+>>>>os.rename('test1','test2')
+>>>>print(os.path.isdir('test2'))
+>True
+>```
+>**125）os.renames(<old>, <new>)**
+> - 类似os.rename()，将<old>重命名为<new>。
+> - <new>可以是文件名也可以是路径名，意味着可以在命名同时将文件移动位置。
+>```
+>>>>print(os.path.isfile('test.txt')) # 文件存在
+>True
+>>>>os.renames('test.txt','test/test1.txt')
+>>>>print(os.path.isfile('test/test1.txt')) # 已经改名并改变路径
+>True
+>>>>print(os.path.isfile('test.txt')) # 源文件不存在
+>False
+>```
+>**126）os.replace(<src>, <dst>, \*, <src_dir_fd=None>, <dst_dir_fd=None>)**
+> - 用<src>替换<dst>。
+> - 可以理解为先删除<dst>,再将<src>改名为<dst>。
+>```
+>>>>f = os.open('test1.txt',os.O_RDONLY)
+>>>>os.read(f,50)
+>'Hello World from test1.txt'
+>
+>>>>os.replace('test1.txt','test2.txt')
+>>>>f = os.open('test2.txt',os.O_RDONLY)
+>>>>os.read(f,50)
+>'Hello World from test1.txt'
+>```
+>**127）os.rmdir(<path>, \*, <dir_fd=None>)**
+> - 与os.removedirs类似，用于删除指定路径的目录。
+> - 与os.removedirs不同的是，目标文件夹必须为空。
+>```
+>>>>print(os.path.isdir('test'))
+>True
+>>>>os.rmdir('test') # 'test'必须为空，不然会报错
+>>>>print(os.path.isdir('test'))
+>False
+>```
+>**128）os.scandir(<path='.'>)**
+> - 用于遍历目录，返回一个包含文件夹、子目录中文件名的迭代器，迭代器中包含os.DirEntry对象列表。
+> - 类似os.listdir(),但是速度更快，是os.listdir()的替代方案。
+>```
+>>>>with os.scandir() as it:
+>>>>    for entry in it:
+>>>>        if not entry.name.startswith('.') and entry.is_file():
+>>>>            print(entry.name)
+>build_exe.exe
+>chardetect.exe
+>distro.exe
+>dumppdf.py
+>easy_install-3.7.exe
+>easy_install.exe
+>f2py.exe
+>falcon-bench.exe
+>falcon-print-routes.exe
+>...
+>```
+>**129）os.DirEntry对象**
+> - 是os.scandir返回的可迭代列表中包含的对象。
+> - 对象中包含文件名和文件信息。
+> - 包含以下方法：
+>
+>方法/值|作用
+>:--:|:--:
+>name|文件名
+>path|完整路径
+>inode()|返回inode值
+>is_dir()|判断是否是路径
+>is_file()|判断是否是文件
+>is_symlink()|判断是否是符号链接
+>stat()|返回文件属性
+>```
+>>>>with os.scandir() as it:
+>>>>    for entry in it:
+>>>>        if not entry.name.startswith('.') and entry.is_file():
+>>>>            print('name:' + entry.name)
+>>>>            print('path:' + entry.path)
+>>>>            print('inode:' + str(entry.inode()))
+>>>>            print('is_dir:' + str(entry.is_dir()))
+>>>>            print('is_file:' + str(entry.is_file()))
+>>>>            print('is_symlink:' + str(entry.is_symlink()))
+>>>>            print('stat:' + str(entry.stat()))
+>>>>            break
+>name:01.py
+>path:.\01.py
+>inode:1970324837274092
+>is_dir:False
+>is_file:True
+>is_symlink:False
+>stat:os.stat_result(st_mode=33206, st_ino=0, st_dev=0, st_nlink=0, st_uid=0, st_gid=0, st_size=379, st_atime=1573300314, st_mtime=1573300314, st_ctime=1573300314)
+>```
+>**130）os.stat(<path>, \*, <dir_fd=None>, <follow_symlinks=True>)**
+> - 获得一个文件或路径的属性。
+> - 以下是返回值的解析。
+>
+>参数|功能
+>:--:|:--:
+>st_mode| inode 保护模式
+>st_ino| inode 节点号。
+>st_dev| inode 驻留的设备。
+>st_nlink| inode 的链接数。
+>st_uid| 所有者的用户ID。
+>st_gid| 所有者的组ID。
+>st_size| 普通文件以字节为单位的大小；包含等待某些特殊文件的数据。
+>st_atime| 上次访问的时间。
+>st_mtime| 最后一次修改的时间。
+>st_ctime| 由操作系统报告的"ctime"。在某些系统上（如Unix）是最新的元数据更改的时间，在其它系统上（如Windows）是创建时间（详细信息参见平台的文档）。
+>```
+>>>>os.stat('d:\\')
+>os.stat_result(st_mode=16895, st_ino=1407374883553285, st_dev=1544123431, st_nlink=1, st_uid=0, st_gid=0, st_size=8192, st_atime=1575037605, st_mtime=1575037605, st_ctime=1530322701)
+>```
+>**131）os.statvfs(<path>)**
+> - 用于返回文件描述符<path>对应的文件系统的信息。
+> - 只能在Unix系统使用。
+> - 以下是返回值的解析。
+>
+>参数|功能
+>:--:|:--:
+>f_bsize| 文件系统块大小
+>f_frsize| 分栈大小
+>f_blocks| 文件系统数据块总数
+>f_bfree| 可用块数
+>f_bavail|非超级用户可获取的块数
+>f_files|文件结点总数
+>f_ffree| 可用文件结点数
+>f_favail| 非超级用户的可用文件结点数
+>f_fsid| 文件系统标识 ID
+>f_flag| 挂载标记
+>f_namemax| 最大文件长度
+>```
+>>>> file = os.open('test.txt',os.O_RDONLY)
+>>>> os.statvfs('test.txt')
+>os.statvfs_result(f_bsize=4096, f_frsize=4096, f_blocks=12868511, f_bfree=11197137, f_bavail=10537695, f_files=3276800, f_ffree=3099903, f_favail=3099903, f_flag=1024, f_namemax=255)
+>```
+>**132）os.supports_dir_fd**
+> - 返回Unix系统支持dir_fd的参数。
+> - 返回的是一个set。
+>```
+>>>>os.supports_dir_fd
+>{<built-in function chown>, <built-in function mkdir>, <built-in function access>, <built-in function symlink>, <built-in function unlink>, <built-in function link>, <built-in function mkfifo>, <built-in function open>, <built-in function rmdir>, <built-in function stat>, <built-in function mknod>, <built-in function readlink>, <built-in function chmod>, <built-in function rename>, <built-in function utime>}
+>```
+>**133）os.supports_effective_ids**
+> - 返回Unix系统支持effective_ids的参数。
+> - 返回的是一个set。
+>```
+>>>> os.supports_effective_ids
+>{<built-in function access>}
+>```
+>**134）os.supports_fd**
+> - 检查是否可以在平台上将路径指定为文件描述符。
+>```
+>>>>os.supports_fd
+>{<function nt.stat(path, *, dir_fd=None, follow_symlinks=True)>,<function nt.truncate(path, length)>}
+>```
+>**135）os.supports_follow_symlinks**
+> - 检查是否可以在平台上使用符号连接的相关功能。
+>```
+>>> os.supports_follow_symlinks
+>{<built-in function chown>, <built-in function access>, <built-in function link>, <built-in function stat>, <built-in function utime>}
+>```
+>**136）os.symlink(<src>, <dst>, <target_is_directory=False>, \*, <dir_fd=None>)**
+> - 为源文件<src>和目标文件<dst>创建一个软链接。
+> - <dst>必须是一个新的文件名。
+>```
+>>>>os.symlink('test1.txt','test2.txt')
+>>>>file = open('test2.txt',r)          
+>>>>file.read()
+>'Hello World!'
+>```
+>**137）os.sync()**
+> - 将系统缓冲区（内存中）的数据写入到文件系统（磁盘）中。
+> - 只能在Unix系统使用。
+>```
+>>>> import ctypes
+>>>> libc = ctypes.CDLL("libc.so.6")
+>>>> libc.sync()
+>>>> print(libc)
+><CDLL 'libc.so.6', handle 7faf68a564e8 at 0x7faf677a8850>
+>```
+>**138）os.truncate(<path>, <length>)**
+> - 截断文件<path>并返回截断的字节<length>。
+> - <path>必须是绝对地址。
+>```
+>>>> file = open('test.txt')
+>>>> file.read()
+>'Hello World!'
+>
+>>>>path = os.path.join(os.path.curdir,'test.txt')
+>>>>os.truncate(path,5) # 从第5个字符开始截断
+>>>>file.read()
+>'Hello'
+>```
+>**139）os.unlink(<path>, \*, <dir_fd=None>)**
+> - 用于删除文件<path>，不可以删除目录。
+> - 与remove()完全相同。
+>```
+>>>>print(os.path.isfile('test.txt'))
+>True
+>>>>os.unlink('test.txt') # 删除文件
+>>>>print(os.path.isfile('test.txt'))
+>False
+>```
+>**140）os.utime(<path>, <times=None>, \*, <[ns, ]dir_fd=None>, <follow_symlinks=True>)**
+> - 用于设置指定路径文件<path>最后的修改和访问时间<times>。
+>```
+>>>>stinfo = os.stat('test.txt')
+>>>>print(stinfo[-3:])
+>[st_atime=1575297708, st_mtime=1575297708, st_ctime=1574776862]
+>
+>>>>os.utime('test.txt',(12123123123,123123123))
+>>>>stinfo = os.stat('test.txt')
+>>>>print(stinfo[-3:])
+>[st_atime=12123123123, st_mtime=123123123, st_ctime=1574776862)
+>```
+>**141）os.walk(<top>, <topdown=True>, <onerror=None>, <followlinks=False>)**
+> - 用于自外向内遍历目录<top>。
+> - <topdown>为可选参数，默认为True，优先遍历 <top> 目录；为False则优先遍历 <top> 的子目录(默认为开启)。
+> - <onerror>为可选参数，当 walk 需要异常时，会调用onerror中的callable 对象。
+> - <followlinks>为可选参数，如果为 True会遍历目录下的快捷方式。
+> - os.walk将返回一个三元组（root,dirs,files）。
+>
+> 元素|含义
+>:--:|:--:
+> root |所指的是当前正在遍历的这个文件夹的本身的地址
+>dirs |是一个 list ，内容是该文件夹中所有的目录的名字(不包括子目录)
+>files |同样是 list , 内容是该文件夹中所有的文件(不包括子目录)
+> - 以下方法将打印出当前文件夹下的所有目录和文件名，是常用的文件遍历工具。
+>```
+>>>>for root, dirs, files in os.walk(".", topdown=False):
+>>>>    print('root = {root}'.format(root=root)) # 根路径
+>>>>    for dir in dirs: # 遍历所有的目录
+>>>>        print('dir = {dir}'.format(dir=dir))
+>>>>    for file in files: # 遍历所有的文件
+>>>>        print('file={file}'.format(file=file))
+>```
+>**142）os.fwalk(<top='.'>, <topdown=True>, <onerror=None>, \*, <follow_symlinks=False, dir_fd=None>)**
+> - 与os.walk()几乎相同，但是返回的是个四元组(root,dirs,files,dir_fd)。
+> - <dir_fd>是所有文件的描述符，os.fwalk可以遍历文件描述符。
+> - 只能在Unix系统使用。
+>```
+>>>> for root,dirs,files,dir_fd in os.fwalk():
+>>>>     print(dir_fd)
+>3
+>4
+>5
+>5
+>5
+>5
+>5
+>5
+>```
+>**143）os.memfd_create(<name>, <flags=os.MFD_CLOEXEC>)**
+> - 创建一个匿名文件，并返回一个与其关联的文件描述符。
+> - 这个文件就像是一个普通文件一样，所以能够被修改，截断，内存映射等等。
+> - 不同于一般文件，此文件保存在RAM中。一旦所有指向这个文件的连接丢失，那么这个文件就会自动被释放。
+> - 必须在Linux 3.17版本以上使用。
+>
+>**144）os.getxattr(<path>, <attribute>, \*, <follow_symlinks=True>)**
+> - 返回<path>扩展属性所对应的值。
+> - 只能在Unix系统使用。
+>
+>**145）os.listxattr(<path=None>, \*, <follow_symlinks=True>)**
+> - 返回<path>相应路径的扩展属性。
+> - 只能在Unix系统使用。
+>
+>**146）os.removexattr(<path>, <attribute>, \*, <follow_symlinks=True>)**
+> - 删除<path>相应路径的扩展属性。
+> - 只能在Unix系统使用。
+>
+>**147）os.setxattr(<path>, <attribute>, <value>, <flags=0>, \*, <follow_symlinks=True>)**
+> - 设置<path>相应路径的扩展属性。
+> - <flags>可以是：
+>
+>参数|功能
+>:--:|:--:
+>os.XATTR_CREATE|操作必须创建属性
+>os.XATTR_REPLACE|操作必须替换现有属性
+> - 只能在Unix系统使用。
+>
+>**148）os.XATTR_SIZE_MAX**
+> - 返回系统支持的最大扩展属性值。
+> - 在linux中通常是65KB。
+> - 只能在Unix系统使用。
+>```
+>>>> os.XATTR_SIZE_MAX
+>65536
+>```
+##### 4. 进程管理
+>**149）os.abort()**
+> - 与exit()相似，都是用来退出进程。
+> - 强行发送终止信号，直接杀掉当前进程。
+>```
+>>>> os.abort()
+>Aborted (core dumped)
+>```
+>**150）os.add_dll_directory(path)**
+> - 向dll搜索路径添加路径。
+> - 只能在Windows系统使用。
+>
+>**151）os.execl(<path>, <arg0>, <arg1>, ...)**
+> - <path>是可执行文件的路径
+> - <arg0>是可执行文件。
+> - <arg1>是执行的文件。
+> - <args> 是参数。
+> - os.execl家族包括：
+>
+>方法|作用
+>:--:|:--:
+>os.execl(<file>, <arg0>,<arg1>,...)| 用参数列表arg0, arg1 等等执行文件
+>os.execv(<file>, <arglist>) | 除了使用参数向量列表，其他的和execl()相同
+>os.execle(<file>, <arg0>,<arg1>,... <env>) | 和execl 相同，但提供了环境变量字典env
+>os.execve(<file>,<arglist>, <env>)|  除了带有参数向量列表，其他的和execle()相同
+>os.execlp(<cmd>, <arg0>,<arg1>,...) | 于execl()相同，但是在用户的搜索路径下搜索完全的文件路径名
+>os.execvp(<cmd>, <arglist>)|  除了带有参数向量列表，与execlp()相同
+>os.execlpe(<cmd>, <arg0>, <arg1>,... <env>) | 和execlp 相同，但提供了环境变量字典env
+>os.execvpe(<cmd>,<arglist>, <env>) | 和execvp 相同，但提供了环境变量字典env
+>```
+>>>>import os
+>>>>os.execl("d:\\python3.7","python","test.py") # 在操作系统中用python执行test.py
+>```
+>**152）os._exit(<n>)**
+> - 与sys.exit()类似，用于推出程序。
+> - 会直接将python程序终止，之后的所有代码都不会继续执行。
+> - <n>可以是:
+>
+>code|含义(在UNIX系统中）
+>:--:|:--:
+>os.EX_OK|表示没有发生错误的退出代码。
+>os.EX_USAGE|退出代码，这意味着命令的使用不正确，例如给出的参数数目错误。
+>os.EX_DATAERR|表示输入数据不正确的退出代码。
+>os.EX_NOINPUT|表示输入文件不存在或不可读的退出代码。
+>os.EX_NOUSER|表示指定用户不存在的退出代码。
+>os.EX_NOHOST|表示指定主机不存在的退出代码。
+>os.EX_UNAVAILABLE|表示所需服务不可用的退出代码。
+>os.EX_SOFTWARE|表示检测到内部软件错误的退出代码。
+>os.EX_OSERR|退出代码，表示检测到操作系统错误，例如无法复刻或创建管道。
+>os.EX_OSFILE|退出代码，这意味着某些系统文件不存在、无法打开或有其他类型的错误。
+>os.EX_CANTCREAT|退出代码，表示无法创建用户指定的输出文件。
+>os.EX_IOERR|退出代码，这意味着对某个文件执行I/O时出错。
+>os.EX_TEMPFAIL|表示发生临时故障的退出代码。这表示可能不是真正的错误，例如在可重试操作期间无法建立的网络连接。
+>os.EX_PROTOCOL|退出代码，表示协议交换非法、无效或不被理解。
+>os.EX_NOPERM|退出代码，表示权限不足，无法执行操作（但不适用于文件系统问题）。
+>os.EX_CONFIG|表示发生某种配置错误的退出代码。
+>os.EX_NOTFOUND|表示“找不到条目”的退出代码。
+>```
+>>>> os._exit(0)
+>ubuntu@VM-0-4-ubuntu:~$ 
+>```
+>**153）os.fork()**
+> - 创建一个新进程。
+> - 新进程是原进程的子进程，原进程为父进程。
+> - 只能在Unix系统使用。
+>```
+>>>>pid = os.fork()
+>>>>if pid == 0:
+>>>>    print "I am child process pid=%s, ppid=%s" % (os.getpid(), os.getppid())
+>>>>    time.sleep(5)
+>>>>else:
+>>>>    print "I am parent process pid=%s, ppid=%s" % (os.getpid(), os.getppid())
+>>>>    time.sleep(5)
+>I am parent process pid=20738 ppid=7898
+>I am child process pid=20799, ppid=20738
+>```
+>**154）os.forkpty()**
+> - 创建一个子进程, 并使用一台新的伪终端作为子进程的控制终端。
+> - 返回值为一对(pid, fd)。
+> - 其中pid在子进程中为0, 而fd是伪终端主端的文件描述符。
+> - 只能在某些版本的Unix系统使用。
+>```
+>>>> pid,fd = os.forkpty()
+>>>>print(pid,fd)
+>22090 3
+>```
+>**155）os.kill(<pid>, <sig>)**
+> - 与os._exit()类似，用于关闭进程。
+> - 对进程发送信号<sig>给进程<pid>杀死进程。
+> - <sig>的常用取值包括：
+>
+>信号|功能
+>:--:|:--:
+>SIGINT|         中断进程
+>SIGTERM|        软件终止信号
+>SIGKILL     |      杀死进程
+>SIGALRM   | 闹钟信号
+>```
+>>>> import signal
+>>>> os.kill(22090,signal.SIGINT)
+>```
+>**156）os.killpg(<pgid>, <sig>)**
+> - 对进程组发送信号<sig>给进程<pgid>进程组。
+> - 只能在Unix系统使用。
+>```
+>>>> import signal
+>>>> os.killpg(2145,signal.SIGINT)
+>```
+>
+>**157）os.nice(<increment>)**
+> - 提高进程的调度优先级。
+> - 只能在Unix系统使用。
+>```
+>>>> os.nice(10)
+>17
+>```
+>**158）os.plock(<op>)**
+> - 将程序段锁定到内存中。
+> - 只能在Unix系统使用。
+>
+>**159）os.popen(<cmd>, <mode='r'>, <buffering=-1>)**
+> - 用于从一个系统命令打开一个管道。
+> - 返回命令的回显。
+> - <cmd>是使用的指令。
+> - <mode>是模式权限，可以是r或w。
+> - <buffering>表示需要的缓冲大小:0表示无缓冲；1表示进行缓冲；其他正值表示使用参数大小的缓冲。
+>```
+>>>>cmd = os.popen('mkdir test')
+>>>>print(cmd)
+><os._wrap_close at 0x1d1751f8e48>
+>>>>os.path.isdir('test')
+>True
+>```
+>**160）os.posix_spawn(<path>, <argv>, <env>, \*, <file_actions=None>, <setpgroup=None>, <resetids=False>, <setsid=False>, <setsigmask=()>, <setsigdef=()>, <scheduler=None>)**
+> - 从python使用的C库API posix_spawn()
+> - 创建一个进程。
+> - 大多数用户不应该使用这个方法，而应该使用subprocess.run()
+> - 只能在Unix系统使用。
+>
+>**161）os.posix_spawnp(<path>, <argv>, <env>, \*, <file_actions=None>, <setpgroup=None>, <resetids=False>, <setsid=False>, <setsigmask=()>, <setsigdef=()>, <scheduler=None>)**
+> - 与os.posix_spawn()类似。
+> - 会在环境变量中搜索可执行文件。
+>
+>**162）os.register_at_fork(\*,<before=None>, <after_in_parent=None>, <after_in_child=None>)**
+> - 用os.fork或类似方法创建子进程时，要执行的可调用函数。
+> - <before>指在创建子进程之前调用的函数。
+> - <after_in_parent> 是在子进程创建后从父进程调用的函数。
+> - <after_in_child> 是从子进程调用的函数。
+> - 只有当控件预期返回到Python解释器时，才会进行这些调用。
+> - 只能在Unix系统使用。
+>```
+>>>>def show():
+>>>>    print('here before fork')
+>>>>os.register_at_fork(before=show) 
+>>>>pid = os.fork() # 用fork创造进程时触发show()
+>here before fork
+>```
+>**163）os.spawn(<mode>, <path>, ...)**
+> - 执行一个外部程序并产生一个子进程。
+> - <path>是可执行文件的路径。
+> - <path>参数后可以增加执行参数
+> - <mode>可以包含以下参数:
+>
+>参数|作用
+>:--:|:--
+>os.P_NOWAIT | 调用外部程序后函数本身不会等待，将会立即返回，代码继续执行。
+>os.P_NOWAITO | 调用外部程序后函数本身不会等待，将会立即返回，代码继续执行。
+>os.P_WAIT|调用外部程序后函数等待程序执行结束才会返回继续。
+>os.P_DETACH|与P_NOWAIT很相似，但是新的线程会脱离所调用的控制台（也就是说新的程序将不会通过当前的控制台来输出）。
+>os.P_OVERLAY|当前线程将会被替换成新的线程，这意味着spawn*函数将一直不返回。
+> - os.spawn家族包括以下成员：
+>
+>成员|特点
+>:--:|:--
+>os.spawnl(mode, path, args*)|调用的参数通过列表对象进行传入。
+>os.spawnle(mode, path, args*, env)|调用的参数通过列表对象进行传入,所调用的程序的环境变量可以通过env参数来指定。
+>os.spawnlp(mode, file, args*)|调用的参数通过列表对象进行传入,外部程序的文件本体将从系统PATH中进行寻找。
+>os.spawnlpe(mode, file, args*, env)|调用的参数通过列表对象进行传入,所调用的程序的环境变量可以通过env参数来指定,外部程序的文件本体将从系统PATH中进行寻找。
+>os.spawnv(mode, path, args)|调用的参数直接传入。
+>os.spawnve(mode, path, args, env)|调用的参数直接传入,所调用的程序的环境变量可以通过env参数来指定。
+>os.spawnvp(mode, file, args)|调用的参数直接传入,,外部程序的文件本体将从系统PATH中进行寻找。
+>os.spawnvpe(mode, file, args, env)|调用的参数直接传入,所调用的程序的环境变量可以通过env参数来指定,外部程序的文件本体将从系统PATH中进行寻找。
+>```
+>>>>os.spawnl(os.P_NOWAIT,'test.exe','.*') 
+>```
+>**164）os.startfile(<path>, <operation>)**
+> - 用于打开外部的程序或文件。
+> - 会自动调用系统关联的程序执行文件。
+> - 只能在Windows系统下使用。
+>```
+>>>>os.startfile('test.txt') # 系统会用记事本打开文件
+>```
+>**165）os.system(<command>)**
+> - 用于调用外部系统指令。
+> - 返回值包括：
+>
+>返回值|含义
+>:--:|:--:
+>0 |代表成功
+>1 |代表小问题
+>2 |代表大问题
+>```
+>>>> os.system('ls')
+>~          foo.txt             test        test2.txt
+>```
+>**166）os.times()**
+> - 返回当前全局进程时间。
+> - 返回值是一个具有五个属性的对象:
+>
+>属性|含义
+>:--:|:--:
+>user|用户时间
+>system|系统时间
+>children_user|所有子进程的用户时间
+>children_system|所有子进程的系统时间
+>elapsed| 从过去的固定点开始的实际时间
+>```
+>>>> os.times()
+>posix.times_result(user=0.02, system=0.0, children_user=0.0, children_system=0.0, elapsed=20403628.36)
+>```
+>**167）os.wait()**
+> - 等待子进程的完成，并返回包含其pid和退出状态指示的元组。
+>```
+>>>>import os
+>>>>import sys
+>
+>>>>def child_process():
+>>>>    '''child process'''
+>>>>    print('child process is running')
+>>>>    sys.exit(0)
+>
+>>>>def parent_process():
+>>>>    '''parent process'''
+>>>>    print( 'parent process is running')
+>>>>    print( 'waiting for child process')
+>>>>    exit_stat = os.wait()
+>>>>    print("waited child process's PID = %d" % (exit_stat[0]))
+>>>>    sys.exit(0)
+>
+>>>>def main():
+>>>>    '''main function'''
+>>>>    pid = os.fork()
+>>>>    if pid > 0:
+>>>>      parent_process()
+>>>>    else:
+>>>>      child_process()
+> 
+>>>>if __name__ == '__main__':
+>>>>    main()
+>parent process is running
+>waiting for child process
+>child process is running
+>waited child process's PID = 27479
+>```
+>**168）os.waitid(<idtype>, <id>, <options>)**
+> - 等待一个或多个子进程的完成。
+> - <idtype>影响<id>的解释方式，可以是P_PID，P_PGID或P_ALL。
+> - <id>指定要等待的pid。
+> - <options>指定要等待的子信号，可以是os.WEXITED，os.WSTOPPED或os.WNOWAIT。
+> - 只能在Unix系统使用。
+>
+>**169）os.waitpid(<pid>, <options>)**
+> - 等待由进程id pid给出的子进程的完成，并返回包含其进程id和退出状态指示的元组。
+> - 参数<options>会影响该函数的行为。在默认情况下，options的值为0。
+> - <options>包含:
+>
+> 参数|含义
+>:--:|:--
+>os.WNOHANG | 如果没有子进程退出，则不阻塞waitpid()调用
+>os.WCONTINUED| 如果子进程从stop状态变为继续执行，则返回进程自前一次报告以来的信息。
+>os.WUNTRACED | 如果子进程被停止过而且其状态信息还没有报告过，则报告子进程的信息。
+> - 返回值包含（同样适用system()和wait()）：
+>
+> 返回值|含义
+>:--:|:--
+>os.WCOREDUMP(status)|如果一个core文件被创建，则返回True，否则返回False。
+>os.WIFCONTINUED(status)|如果一个进程被停止过，并且继续执行，则返回True，否则返回False。
+>os.WIFSTOPPED(status)|如果子进程被停止过，则返回True，否则返回False。
+>os.WIFSIGNALED(status)|如果进程由于信号而退出，则返回True，否则返回False。
+>os.WIFEXITED(status)|如果进程是以exit()方式退出的，则返回True，否则返回False。
+>os.WEXITSTATUS(status)|如果WIFEXITED(status)返回True，则返回一个整数，该整数是exit()调用的参数。否则返回值是未定义的。
+>os.WSTOPSIG(status)|返回导致进程停止的信号
+>os.WTERMSIG(status)|返回导致进程退出的信号
+>
+>**170）os.wait3(<options>)**
+> - 等待由进程id pid给出的子进程的完成，类似于waitpid()。
+> - 没有给出进程id参数，并返回子进程id。
+> - 退出状态指示和资源使用信息的3元素元组。
+> - 只能在Unix系统使用。
+>
+>**171）os.wait4(<pid>,<options>)**
+> - 等待由进程id pid给出的子进程的完成，类似于waitpid()。
+> - 返回子进程id。
+> - 退出状态指示和资源使用信息的3元素元组。
+> - 只能在Unix系统使用。
+##### 5. 调度器接口
+- 调度器函数控制操作系统如何为进程分配CPU时间。
+- 只在部分UNIX平台上可用。
+> **172) os.sched_get_priority_min(<policy>)**
+> - 获取策略的最低优先级值。
+> - <policy>可以是：
+> 
+> 策略|含义
+>:--:|:--:
+>os.SCHED_OTHER| 默认的调度策略。对应0。
+>os.SCHED_BATCH| 用于 CPU 密集型进程的调度策略，它会尽量为计算机中的其余任务保留交互性。对应3。
+>os.SCHED_IDLE| 用于极低优先级的后台任务的调度策略。对应5。
+>os.SCHED_SPORADIC|用于偶发型服务程序的调度策略。
+>os.SCHED_FIFO|先进先出的调度策略。对应1。
+>os.SCHED_RR| 循环式的调度策略。对应2。
+>os.SCHED_RESET_ON_FORK|此旗标可与任何其他调度策略进行 OR 运算。 当带有此旗标的进程设置分叉时，其子进程的调度策略和优先级会被重置为默认值。
+>```
+>>>> os.sched_get_priority_min(os.SCHED_RR)
+>1
+>```
+> **173) os.sched_get_priority_min(<policy>)**
+> - 获取策略的最大优先级值。
+> - <policy>同上。
+>```
+>>>> os.sched_get_priority_max(os.SCHED_RR) 
+>99
+>```
+> **174) os.sched_setscheduler(<pid>, <policy>, <param>)**
+> - 为PID <pid>的进程设置调度策略。
+> - <pid>为0表示调用进程。
+> - <policy>同上是上面的调度策略常量之一。
+> - <param>是一个sched_param实例。
+>
+> **175）os.sched_getscheduler(<pid>)**
+> - 返回PID<pid>的进程的调度策略。
+> - <pid>为0表示调用进程。
+> - <policy>同上。
+>```
+>>>> os.sched_getscheduler(0)    
+>0
+>```
+> **176）os.sched_setparam(<pid>, <param>)**
+> - 使用PID <pid>设置进程的调度参数。
+> - <pid>为0表示调用进程。
+> - <param>是一个sched_param实例。
+>
+> **177）os.sched_getparam(<pid>)**
+> - 将调度参数作为PID <pid>的进程的sched_param实例返回。
+> - <pid>为0表示调用进程。
+>```
+>>>> os.sched_getparam(10)
+>posix.sched_param(sched_priority=99)
+>```
+> **178）os.sched_rr_get_interval(<pid>)**
+> - 返回PID为<pid>的进程的循环量（以秒为单位）。
+> - <pid>为0表示调用进程。
+>```
+>>>> os.sched_rr_get_interval(0) 
+>0.0
+>```
+> **179）os.sched_yield()**
+> - 自愿放弃CPU。
+>```
+>>>> os.sched_yield()
+>```
+> **180）os.sched_setaffinity(<pid>, <mask>)**
+> - 使用PID<pid>将进程限制一组CPU。
+> - <mask>是表示应该限制进程的CPU集合的整数的迭代。
+>
+> **181）os.sched_getaffinity(<pid>)**
+> - 返回<pid>进程被限制的CPU集合。
+>```
+>>>> os.sched_getaffinity(10)
+>{0}
+>```
+##### 6. 杂项系统信息
+> **182）os.confstr(<name>)**
+> - 用来获得字符串变量配置的属性值。
+> - 只在部分UNIX平台上可用。
+>```
+>>>> os.confstr('CS_GNU_LIBC_VERSION')
+>'glibc 2.23'
+>```
+> **183）os.confstr_names**
+> - 返回主机操作系统已知的名称是 confstr_names 字典的键。
+> - 只在部分UNIX平台上可用。
+>```
+>>>> os.confstr_names
+>{'CS_GNU_LIBC_VERSION': 2, 'CS_GNU_LIBPTHREAD_VERSION': 3, 'CS_LFS64_CFLAGS': 1004, 'CS_LFS64_LDFLAGS': 1005, 'CS_LFS64_LIBS': 1006, 'CS_LFS64_LINTFLAGS': 1007, 'CS_LFS_CFLAGS': 1000, 'CS_LFS_LDFLAGS': 1001, 'CS_LFS_LIBS': 1002, 'CS_LFS_LINTFLAGS': 1003, 'CS_PATH': 0, 'CS_XBS5_ILP32_OFF32_CFLAGS': 1100, 'CS_XBS5_ILP32_OFF32_LDFLAGS': 1101, 'CS_XBS5_ILP32_OFF32_LIBS': 1102, 'CS_XBS5_ILP32_OFF32_LINTFLAGS': 1103, 'CS_XBS5_ILP32_OFFBIG_CFLAGS': 1104, 'CS_XBS5_ILP32_OFFBIG_LDFLAGS': 1105, 'CS_XBS5_ILP32_OFFBIG_LIBS': 1106, 'CS_XBS5_ILP32_OFFBIG_LINTFLAGS': 1107, 'CS_XBS5_LP64_OFF64_CFLAGS': 1108, 'CS_XBS5_LP64_OFF64_LDFLAGS': 1109, 'CS_XBS5_LP64_OFF64_LIBS': 1110, 'CS_XBS5_LP64_OFF64_LINTFLAGS': 1111, 'CS_XBS5_LPBIG_OFFBIG_CFLAGS': 1112, 'CS_XBS5_LPBIG_OFFBIG_LDFLAGS': 1113, 'CS_XBS5_LPBIG_OFFBIG_LIBS': 1114, 'CS_XBS5_LPBIG_OFFBIG_LINTFLAGS': 1115}
+>```
+> **184）os.cpu_count()**
+> - 返回系统中的CPU数。
+>```
+>>>>os.cpu_count()
+>8
+>```
+> **185）os.getloadavg()**
+> - 获取系统的平衡负载。
+> - 如果无法获取负载平均值，则返回在最近1,5和15分钟内平均的系统运行队列中的进程数或引发OSError。
+> - 只能在UNIX平台使用。
+>```
+>>>> os.getloadavg()
+>(0.12, 0.05, 0.01)
+>```
+> **186）os.sysconf(<name>)**
+> - 返回一个系统配置变量的整数值。
+> - <name>是系统配置变量名称，可以在os. sysconf_names中找到。
+> - 只能在UNIX平台使用。
+>```
+>>>> os.sysconf('SC_2_C_VERSION')
+>200809
+>```
+> **187）os.sysconf_names**
+> - 返回系统配置变量对应sysconf()整数值的字典。
+>```
+>>>> os. sysconf_names
+>{'SC_2_CHAR_TERM': 95, 'SC_2_C_BIND': 47, 'SC_2_C_DEV': 48, 'SC_2_C_VERSION': 96, 'SC_2_FORT_DEV': 49, 'SC_2_FORT_RUN': 50, 'SC_2_LOCALEDEF': 52, 'SC_2_SW_DEV': 51, 'SC_2_UPE': 97, 'SC_2_VERSION': 46, 'SC_AIO_LISTIO_MAX': 23, 'SC_AIO_MAX': 24, 'SC_AIO_PRIO_DELTA_MAX': 25, 'SC_ARG_MAX': 0, 'SC_ASYNCHRONOUS_IO': 12, 'SC_ATEXIT_MAX': 87, 'SC_AVPHYS_PAGES': 86, 'SC_BC_BASE_MAX': 36, 'SC_BC_DIM_MAX': 37, 'SC_BC_SCALE_MAX': 38, 'SC_BC_STRING_MAX': 39, 'SC_CHARCLASS_NAME_MAX': 45, 'SC_CHAR_BIT': 101, 'SC_CHAR_MAX': 102, 'SC_CHAR_MIN': 103, 'SC_CHILD_MAX': 1, 'SC_CLK_TCK': 2, 'SC_COLL_WEIGHTS_MAX': 40, 'SC_DELAYTIMER_MAX': 26, 'SC_EQUIV_CLASS_MAX': 41, 'SC_EXPR_NEST_MAX': 42, 'SC_FSYNC': 15, 'SC_GETGR_R_SIZE_MAX': 69, 'SC_GETPW_R_SIZE_MAX': 70, 'SC_INT_MAX': 104, 'SC_INT_MIN': 105, 'SC_IOV_MAX': 60, 'SC_JOB_CONTROL': 7, 'SC_LINE_MAX': 43, 'SC_LOGIN_NAME_MAX': 71, 'SC_LONG_BIT': 106, 'SC_MAPPED_FILES': 16, 'SC_MB_LEN_MAX': 108, 'SC_MEMLOCK': 17, 'SC_MEMLOCK_RANGE': 18, 'SC_MEMORY_PROTECTION': 19, 'SC_MESSAGE_PASSING': 20, 'SC_MQ_OPEN_MAX': 27, 'SC_MQ_PRIO_MAX': 28, 'SC_NGROUPS_MAX': 3, 'SC_NL_ARGMAX': 119, 'SC_NL_LANGMAX': 120, 'SC_NL_MSGMAX': 121, 'SC_NL_NMAX': 122, 'SC_NL_SETMAX': 123, 'SC_NL_TEXTMAX': 124, 'SC_NPROCESSORS_CONF': 83, 'SC_NPROCESSORS_ONLN': 84, 'SC_NZERO': 109, 'SC_OPEN_MAX': 4, 'SC_PAGESIZE': 30, 'SC_PAGE_SIZE': 30, 'SC_PASS_MAX': 88, 'SC_PHYS_PAGES': 85, 'SC_PII': 53, 'SC_PII_INTERNET': 56, 'SC_PII_INTERNET_DGRAM': 62, 'SC_PII_INTERNET_STREAM': 61, 'SC_PII_OSI': 57, 'SC_PII_OSI_CLTS': 64, 'SC_PII_OSI_COTS': 63, 'SC_PII_OSI_M': 65, 'SC_PII_SOCKET': 55, 'SC_PII_XTI': 54, 'SC_POLL': 58, 'SC_PRIORITIZED_IO': 13, 'SC_PRIORITY_SCHEDULING': 10, 'SC_REALTIME_SIGNALS': 9, 'SC_RE_DUP_MAX': 44, 'SC_RTSIG_MAX': 31, 'SC_SAVED_IDS': 8, 'SC_SCHAR_MAX': 111, 'SC_SCHAR_MIN': 112, 'SC_SELECT': 59, 'SC_SEMAPHORES': 21, 'SC_SEM_NSEMS_MAX': 32, 'SC_SEM_VALUE_MAX': 33, 'SC_SHARED_MEMORY_OBJECTS': 22, 'SC_SHRT_MAX': 113, 'SC_SHRT_MIN': 114, 'SC_SIGQUEUE_MAX': 34, 'SC_SSIZE_MAX': 110, 'SC_STREAM_MAX': 5, 'SC_SYNCHRONIZED_IO': 14, 'SC_THREADS': 67, 'SC_THREAD_ATTR_STACKADDR': 77, 'SC_THREAD_ATTR_STACKSIZE': 78, 'SC_THREAD_DESTRUCTOR_ITERATIONS': 73, 'SC_THREAD_KEYS_MAX': 74, 'SC_THREAD_PRIORITY_SCHEDULING': 79, 'SC_THREAD_PRIO_INHERIT': 80, 'SC_THREAD_PRIO_PROTECT': 81, 'SC_THREAD_PROCESS_SHARED': 82, 'SC_THREAD_SAFE_FUNCTIONS': 68, 'SC_THREAD_STACK_MIN': 75, 'SC_THREAD_THREADS_MAX': 76, 'SC_TIMERS': 11, 'SC_TIMER_MAX': 35, 'SC_TTY_NAME_MAX': 72, 'SC_TZNAME_MAX': 6, 'SC_T_IOV_MAX': 66, 'SC_UCHAR_MAX': 115, 'SC_UINT_MAX': 116, 'SC_UIO_MAXIOV': 60, 'SC_ULONG_MAX': 117, 'SC_USHRT_MAX': 118, 'SC_VERSION': 29, 'SC_WORD_BIT': 107, 'SC_XBS5_ILP32_OFF32': 125, 'SC_XBS5_ILP32_OFFBIG': 126, 'SC_XBS5_LP64_OFF64': 127, 'SC_XBS5_LPBIG_OFFBIG': 128, 'SC_XOPEN_CRYPT': 92, 'SC_XOPEN_ENH_I18N': 93, 'SC_XOPEN_LEGACY': 129, 'SC_XOPEN_REALTIME': 130, 'SC_XOPEN_REALTIME_THREADS': 131, 'SC_XOPEN_SHM': 94, 'SC_XOPEN_UNIX': 91, 'SC_XOPEN_VERSION': 89, 'SC_XOPEN_XC
+>```
+> **188）os.curdir**
+> - 返回操作系统当前地址的字符串,通常是'.'。
+>```
+>>>> os.curdir
+>'.'
+>```
+> **189）os.pardir**
+> - 返回操作系统当前地址的上一级菜单，通常是'..'。
+>```
+>>>>os.pardir
+>'..'
+>```
+> **190）os.sep**
+> - 表示系统默认的分隔符，Windows下是'\\',Linux下是'/'
+>```
+>>>> os.sep
+>'/'
+>```
+> **191）os.altsep**
+> - 操作系统用于分隔路径名组件的备用字符,Windows下位是'/'。
+> - 如果只有一个分隔符字符，则None。
+>```
+>>>>os.altsep
+>'/'
+>```
+> **192）os.extsep**
+> - 将基本文件名与扩展名分隔开的字符。
+>```
+>>>> os.extsep
+>'.'
+>```
+> **193）os.pathsep**
+> - 操作系统的地址分隔符。
+> - 例如在Windows下是‘;’，Linux下是':'
+>```
+>>>> os.pathsep
+>':'
+>```
+> **194）os.defpath**
+> - 当使用exec函数族的时候，如果没有指定PATH环境变量，则默认会查找os.defpath中的值作为子进程PATH的值。
+>```
+>>>> os.defpath
+>'/bin:/usr/bin'
+>```
+> **195）os.linesep**
+> - 返回当年系统中的换行符。
+> - 比如在Windows中是'\r\n',Linux中是'\n'。
+>```
+>>>> os.linesep
+>'\n'
+>```
+> **196）os.devnull**
+> - 返回不同系统中的空设备路径。
+> - 比如在Windows中是'nul',Linux中是'/dev/null'。
+>```
+>>>> os.devnull
+>'/dev/null'
+>```
+##### 7. 随机数
+- 这里的与random()函数不同，主要是字节操作。
+> **197）os.getrandom(<size>, <flags=0>)**
+> - 等概率获得随机字节,最大为<size>。
+> - 该函数返回的字节数少于请求的字节数。
+> - <flags>可以是
+>
+> 参数|含义
+>:--:|:--:
+>os.GRND_NONBLOCK|非阻塞模式
+>os.GRND_RANDOM|随机字节从/dev/random池中获取，而不是/dev/urandom池。
+> - 只能在Linux3.17以上使用
+>
+> **198）os.urandom(<size>)**
+> - 返回一个<size>个字节长的string，适合用于加密。
+>```
+>>>> os.urandom(8)     
+>b'\xa5\xb8.6%\xceu\xa8'
+>```
+## 三、os.path的相关方法
+- os.path 模块主要用于文件路径的常用操作。
+> **199）os.path.abspath(<path>)**
+> - 返回路径<path>的绝对路径
+>```
+>>>> os.path.abspath('test.txt')
+>'/home/ubuntu/test.txt'
+>```
+> **200）os.path.basename(<path>)**
+> - 返回文件的文件名。(去掉路径名)
+>```
+>>>> os.path.basename('test.txt')
+>'test.txt'
+>```
+> **201）os.path.commonpath(<path>)**
+> - 返回路径列表中所有路径名的最长公共子路径。
+>```
+>>>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
+>'/usr'
+>```
+> **202）os.path.commonprefix(<list>)**
+> - 返回路径列表中所有路径名的最长公共子路径。（逐字符比较）
+> - 由于是逐字符比较，所有有可能返回无效路径。
+>```
+>>>>os.path.commonprefix(['c:/users/xiaors', 'c:/users/xiaoshimei'])
+>'c:/users/xiao'
+>```
+> **203）os.path.dirname(<path>)**
+> - 返回路径<path>的目录名称。(不包含文件名）
+>```
+>>>> os.path.dirname('test.txt')
+>''
+>```
+> **204）os.path.exists(<path>)**
+> - 判断文件<path>是否存在。
+> - 在某些平台上，如果使用 os.stat() 查询到目标文件没有执行权限，会直接返回False。
+>```
+>>>> os.path.exists('c:/some/file/not/exists')
+>False
+>```
+> **205）os.path.lexists(<path>)**
+> - 判断文件<path>是否存在。
+> - 即使 os.stat() 查询到目标文件没有执行权限，也会返回True。
+>```
+>>>> os.path.exists('/usr')                   
+>True
+>```
+> **206）os.path.expanduser(<path>)**
+> - 将<path>参数中开头部分的 ~ 或 ~user 替换为当前 用户 的Home目录并返回。
+>```
+>>>> os.path.expanduser('~/test.txt')
+>'/home/ubuntu/test.txt'
+>```
+> **207）os.path.expandvars(<path>)**
+> - 将<path>参数中\$name或者${name}的部分被替换成环境变量name的值。
+>```
+>>>> path = '/home/ubuntu/test.txt'
+>>>> os.path.expandvars('$PATH')
+>'/home/ubuntu/bin:/home/ubuntu/.local/bin:/home/ubuntu/anaconda3/condabin:/home/ubuntu/anaconda3/bin:/home/ubuntu/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin'
+>```
+> **208）os.path.getatime(<path>)**
+> - 返回 <path> 的最后访问时间。
+> - 返回值为纪元秒数。
+>```
+>>>> os.path.getatime('test.txt')
+>1575375189.990112
+>```
+> **209）os.path.getmtime(<path>)**
+> - 返回 <path> 的最后修改时间。
+> - 返回值为纪元秒数。
+>```
+>>>> os.path.getmtime('test.txt')
+>1575375205.9901018
+>```
+> **210）os.path.getctime(<path>)**
+> - 返回 <path> 元数据的最后修改时间或path创建时间。
+> - 返回值为纪元秒数。
+>```
+>>>> os.path.getctime('test.txt')
+>1575375205.9901018
+>```
+> **211）os.path.getsize(<path>)**
+> - 返回 path 的大小，以字节为单位。
+>```
+>>>> os.path.getsize('test.txt')
+>11
+>```
+> **212）os.path.isabs(<path>)**
+> - 判断<path>是否是绝对路径。
+>```
+>>>> os.path.isabs('test.txt') 
+>False
+>>>> os.path.isabs('/home/ubuntu/test.txt') 
+>True
+>```
+> **213）os.path.isfile(<path>)**
+> - 判断<path>是否是现有的常规文件。
+>```
+>>>>os.path.isfile('test.txt') 
+>True
+>```
+> **214）os.path.isdir(<path>)**
+> - 判断<path>是否是现有的目录。
+>```
+>>>> os.path.isdir('/home/ubuntu') # 真路径
+>True
+>>>> os.path.isdir('/home/abuntu') # 假路径
+>False
+>```
+> **215）os.path.islink(<path>)**
+> - 判断<path>是否是软链接。
+>```
+>>>> os.path.islink('/home/ubuntu/test.txt')
+>False
+>```
+> **216）os.path.ismount(<path>)**
+> - 判断<path>是否存在且为一个挂载点(比如光盘)。
+>```
+>>>> os.path.ismount( "/mnt/cdrom" ) # 光盘放在cdrom中
+>True
+>>>> os.path.ismount( "/mnt/cdrom" ) # 光盘不在cdrom中
+>False
+>```
+> **217）os.path.join(<path>, <paths>)**
+> - 合理地拼接一个或多个路径部分。
+>```
+>>>> os.path.join('c:','user','filename.exe')   
+>'c:/user/filename.exe'
+>```
+> **218）os.path.normcase(<path>)**
+> - 规范路径的大小写。
+>```
+>>>>os.path.normcase('C:/AbC/EFg/tEST.tXT')
+>'c:\\abc\\efg\\test.txt'
+>```
+> **219）os.path.normpath(<path>)**
+> - 通过折叠多余的分隔符和对上级目录的引用来标准化路径名。
+>```
+>>>>os.path.normpath('c://abc/../def///test.txt')
+>'c:\\def\\test.txt'
+>```
+> **220）os.path.realpath(<path>)**
+> - 返回指定文件的规范路径，消除路径中存在的任何符号链接。
+>```
+>>>>os.path.realpath('c://abc/../def///test.txt')
+>'c:\\def\\test.txt'
+>```
+> **221）os.path.relpath(<path>, <start=os.curdir>)**
+> - 返回从<start>目录到达 <path>目录 之间要经过的相对路径。
+>```
+>>>>os.path.relpath('c:\\user\\xiaorans') # 当前目录在c:\
+>'..\\..\\user\\xiaorans'
+>```
+> **222）os.path.samefile(<path1>, <path2>)**
+> - 判断两个路径是否都指向相同的文件或目录。
+>```
+>>>> os.path.samefile('test.txt','/home/ubuntu/test.txt')
+>True
+>```
+> **223）os.path.sameopenfile(<fp1>, <fp2>)**
+> - 判断两个路径是否都指向相同的文件描述符。
+>```
+>>>> import os
+>>>> file1 = os.open('test1.txt',os.O_RDONLY)
+>>>> file2 = os.open('test1.txt',os.O_RDONLY)
+>>>> os.path.sameopenfile(file1,file2)
+>True
+>```
+> **224）os.path.samestat(<stat1>, <stat2>)**
+> - 判断stat 元组 <stat1> 和 <stat2> 是否指向相同文件。
+>```
+>>>> a = os.stat('test.txt')
+>>>> b = os.stat('test.txt')
+>>>> os.path.samestat(a,b)
+>True
+>```
+> **225）os.path.split(<path>)**
+> - 将路径 <path> 拆分为元组，路径和文件名。
+>```
+>>>>os.path.split(os.path.abspath('test.txt'))
+>('C:\\Users\\xiaor', 'test.txt')
+>```
+> **226）os.path.splitdrive(<path>)**
+> - 将路径<path>拆分为文组，盘符和剩余部分。
+>```
+>os.path.splitdrive(os.path.abspath('test.txt'))
+>('C:', '\\Users\\xiaor\\test.txt')
+>```
+> **227）os.path.splitext(<path>)**
+> - 将<path>拆分为文件名后缀和剩余部分。
+>```
+>>>>os.path.splitext(os.path.abspath('test.txt'))
+>('C:\\Users\\xiaor\\test', '.txt')
+>```
+> **228）os.path.supports_unicode_filenames**
+> - 如果当前操作系统允许将任意 Unicode 字符串用作文件名，则为 True。
+>```
+>>>>os.path.supports_unicode_filenames # Windows系统下
+>True
+>>>>os.path.supports_unicode_filenames # Linux系统下
+>False
+>```
+
+## 参考资料
+---
+- https://www.runoob.com 菜鸟教程
+- http://www.tulingxueyuan.com/ 北京图灵学院
+- http://www.imooc.com/article/19184?block_id=tuijian_wz#child_5_1 两点水
+- https://blog.csdn.net/weixin_44213550/article/details/91346411 python老菜鸟
+- https://realpython.com/python-string-formatting/ Dan Bader
+- https://www.liaoxuefeng.com/ 廖雪峰
+- https://blog.csdn.net/Gnewocean/article/details/85319590 新海说
+- 《Python学习手册》Mark Lutz
+- 《Python编程 从入门到实践》Eric Matthes
+---
+本文作者：大师兄(superkmi)
+![梦幻微武侠](https://upload-images.jianshu.io/upload_images/19742364-0b165e9d9cf51f71.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
